@@ -19,6 +19,7 @@ Before you begin, ensure you have the following installed on your local machine:
 
 *   [Node.js](https://nodejs.org/) (v18 or later is recommended)
 *   [npm](https://www.npmjs.com/) (usually comes with Node.js)
+*   Use nvm to handlemultiple node versions
 *   A **Google Gemini API Key**.
 
 ## Getting Started
@@ -31,10 +32,10 @@ First, clone this repository to your local machine using your preferred method.
 
 ```bash
 # Using HTTPS
-git clone https://github.com/your-username/harness-ucd-analyzer.git
+git clone https://github.com/diegopereiraeng/ucd-migrator.git
 
 # Navigate into the project directory
-cd harness-ucd-analyzer
+cd ucd-migrator
 ```
 
 ### 2. Install Dependencies
@@ -54,8 +55,8 @@ The application requires an API Key from Google Gemini to function. You must cre
 3.  Add your API key to this file, prefixed with `VITE_`, as shown below:
 
 ```
-# .env
-VITE_API_KEY=YOUR_GEMINI_API_KEY_HERE
+# .env.local
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 ```
 Replace `YOUR_GEMINI_API_KEY_HERE` with your actual key from Google AI Studio.
 
@@ -69,11 +70,11 @@ Start the local development server with the following command:
 npm run dev
 ```
 
-This command will start the application. The terminal will display the local URL where the app is running, which is typically `http://localhost:5173`.
+This command will start the application. The terminal will display the local URL where the app is running, which is typically `http://localhost:3000`.
 
 ## How to Use the Application
 
-1.  Open the provided URL (e.g., `http://localhost:5173`) in your web browser.
+1.  Open the provided URL (e.g., `http://localhost:3000`) in your web browser.
 2.  Drag and drop your exported UCD Component Template JSON file onto the upload area, or click to browse for the file.
 3.  Once uploaded, the application will parse the file and display the main analysis view.
 4.  Navigate through the available tabs:
