@@ -1,0 +1,5 @@
+{
+  "name": "Harness UCD JSON Process Analyzer",
+  "description": "An application to parse, visualize, and summarize UrbanCode Deploy (UCD) component template JSON files using AI. Upload a UCD JSON file to see a human-readable explanation of the deployment processes and an AI-generated summary suitable for migration planning.",
+  "requestFramePermissions": []
+}
