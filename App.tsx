@@ -111,7 +111,7 @@ function App() {
             <FileUpload onFileUpload={handleFileUpload} setFileName={handleSetFileNames} />
           </div>
         ) : (
-          <ProcessView parsedData={parsedData} fileName={fileName} parserType={selectedParser} llmProvider={selectedLLM} />
+          <ProcessView parsedData={parsedData} fileName={fileName} parserType={selectedParser} llmProvider={selectedLLM} onLLMChange={handleLLMChange} />
         )}
       </main>
       <footer className="py-4 mt-8 border-t border-border-color">
