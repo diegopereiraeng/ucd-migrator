@@ -28,6 +28,7 @@ interface ProcessViewProps {
   fileName: string;
   parserType: string;
   llmProvider: LLMProvider;
+  onLLMChange: (provider: LLMProvider) => void;
 }
 
 const generateId = () => `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -144,10 +145,29 @@ const WorkflowNodeComponent: React.FC<{
     onAddStep: (parentId: string, isBranch: boolean) => void;
     onUpdateInstruction: (stepId: string, instruction: string) => void;
     onDelete: (stepId: string) => void;
-}> = ({ step, allSteps, onGenerate, onAddStep, onUpdateInstruction, onDelete }) => {
+    onEditResult: (stepId: string, newResult: string) => void;
+}> = ({ step, allSteps, onGenerate, onAddStep, onUpdateInstruction, onDelete, onEditResult }) => {
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedResult, setEditedResult] = useState(step.result);
 
     const children = useMemo(() => allSteps.filter(s => s.parentId === step.id), [allSteps, step.id]);
     const isCompleted = step.status === 'completed';
+
+    // Update editedResult when step.result changes
+    useEffect(() => {
+        setEditedResult(step.result);
+    }, [step.result]);
+
+    const handleSaveEdit = () => {
+        onEditResult(step.id, editedResult);
+        setIsEditing(false);
+    };
+
+    const handleCancelEdit = () => {
+        setEditedResult(step.result);
+        setIsEditing(false);
+    };
 
     const getConnectorHTML = () => {
         if (step.parentId === null) return null;
@@ -192,7 +212,50 @@ const WorkflowNodeComponent: React.FC<{
                 </button>
 
                 {step.status === 'loading' && <div className="flex items-center justify-center h-40 text-text-secondary mt-4"><CodeIcon className="w-10 h-10 animate-pulse text-brand-secondary" /><p className="ml-3">Generating...</p></div>}
-                {step.result && step.status !== 'loading' && <div className="mt-4"><CodeBlock title="Result" code={step.result} /></div>}
+                
+                {step.result && step.status !== 'loading' && (
+                    <div className="mt-4">
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-medium text-text-primary">Result</span>
+                            <div className="flex gap-2">
+                                {isEditing ? (
+                                    <>
+                                        <button
+                                            onClick={handleSaveEdit}
+                                            className="text-xs bg-green-600 hover:bg-green-700 text-white font-semibold py-1 px-3 rounded transition-colors"
+                                        >
+                                            Save
+                                        </button>
+                                        <button
+                                            onClick={handleCancelEdit}
+                                            className="text-xs bg-gray-600 hover:bg-gray-700 text-white font-semibold py-1 px-3 rounded transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={() => setIsEditing(true)}
+                                        className="text-xs bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary border border-brand-primary/20 font-semibold py-1 px-3 rounded transition-colors"
+                                    >
+                                        Edit YAML
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        {isEditing ? (
+                            <textarea
+                                value={editedResult}
+                                onChange={(e) => setEditedResult(e.target.value)}
+                                className="w-full p-3 bg-background-dark border border-border-color rounded-md text-xs font-mono text-text-primary min-h-[300px]"
+                                spellCheck={false}
+                            />
+                        ) : (
+                            <CodeBlock title="" code={step.result} />
+                        )}
+                    </div>
+                )}
+                
                 {step.status === 'error' && <p className="text-red-400 mt-2">An error occurred during generation.</p>}
             </div>
 
@@ -221,6 +284,7 @@ const WorkflowNodeComponent: React.FC<{
                                 onAddStep={onAddStep}
                                 onUpdateInstruction={onUpdateInstruction}
                                 onDelete={onDelete}
+                                onEditResult={onEditResult}
                             />
                         </div>
                     ))}
@@ -331,7 +395,7 @@ const AddStepModal: React.FC<{
 };
 
 
-export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, parserType, llmProvider }) => {
+export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, parserType, llmProvider, onLLMChange }) => {
   // Get parser-specific system instructions
   const systemInstructions = getSystemInstructions(parserType);
   const parserDisplayName = getParserDisplayName(parserType);
@@ -393,8 +457,29 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
     getSummary();
   }, [parsedData, summarySystemInstruction]);
 
+  // Handler to manually regenerate the AI Migration Guide
+  const handleRegenerateSummary = async () => {
+    setError('');
+    setIsSummaryLoading(true);
+    try {
+      const summaryResult = await generateSummary(parsedData, summarySystemInstruction);
+      setSummary(summaryResult);
+    } catch (e) {
+      console.error(e);
+      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+      setError(`Failed to generate AI summary. ${errorMessage}`);
+      setSummary(`Could not load summary. Error: ${errorMessage}`);
+    } finally {
+      setIsSummaryLoading(false);
+    }
+  };
+
   const handleUpdateInstruction = (stepId: string, instruction: string) => {
     setWorkflow(prev => prev.map(s => s.id === stepId ? { ...s, systemInstruction: instruction } : s));
+  };
+
+  const handleEditResult = (stepId: string, newResult: string) => {
+    setWorkflow(prev => prev.map(s => s.id === stepId ? { ...s, result: newResult } : s));
   };
   
   const handleOpenAddStepModal = (parentId: string, isBranch: boolean) => {
@@ -569,14 +654,23 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
         )}
        </div>
 
-       {/* LLM Provider Indicator */}
+       {/* LLM Provider Selector - Can switch at any time */}
        <div className="flex justify-between items-center mb-4 pb-3 border-b border-border-color">
-         <div className="flex items-center gap-2">
+         <div className="flex items-center gap-3">
            <AiIcon className="w-5 h-5 text-brand-primary" />
-           <span className="text-sm text-text-secondary">AI Provider:</span>
-           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
-             {LLM_PROVIDER_NAMES[llmProvider]}
-           </span>
+           <label htmlFor="llm-provider-select" className="text-sm text-text-secondary">AI Provider:</label>
+           <select
+             id="llm-provider-select"
+             value={llmProvider}
+             onChange={(e) => onLLMChange(e.target.value as LLMProvider)}
+             className="px-3 py-1.5 rounded-lg text-sm font-medium bg-brand-primary/10 text-brand-primary border border-brand-primary/20 hover:bg-brand-primary/20 focus:ring-2 focus:ring-brand-primary focus:outline-none cursor-pointer transition-all"
+             title="Switch AI provider at any time"
+           >
+             <option value="gemini">{LLM_PROVIDER_NAMES.gemini}</option>
+             <option value="claude">{LLM_PROVIDER_NAMES.claude}</option>
+             <option value="openai">{LLM_PROVIDER_NAMES.openai}</option>
+           </select>
+           <span className="text-xs text-text-secondary italic">💡 Switch anytime</span>
          </div>
          <div className="text-xs text-text-secondary">
            Parser: {parserDisplayName}
@@ -605,7 +699,16 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
         </div>
         
         <div className={activeTab === 'summary' ? '' : 'hidden'}>
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-end gap-3 mb-4">
+                <button
+                    onClick={handleRegenerateSummary}
+                    disabled={isSummaryLoading}
+                    className="flex items-center gap-2 bg-brand-primary/10 border border-brand-primary/20 text-brand-primary text-sm font-semibold py-2 px-4 rounded-lg hover:bg-brand-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Regenerate AI Migration Guide with current LLM provider"
+                >
+                    <AiIcon className="w-4 h-4" />
+                    {isSummaryLoading ? 'Generating...' : 'Regenerate Guide'}
+                </button>
                 <button
                     onClick={handleExportSummary}
                     disabled={isSummaryLoading || !summary}
@@ -636,6 +739,7 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
                         onAddStep={handleOpenAddStepModal}
                         onUpdateInstruction={handleUpdateInstruction}
                         onDelete={handleDeleteStep}
+                        onEditResult={handleEditResult}
                     />
                 ))}
            </div>
