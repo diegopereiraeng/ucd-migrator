@@ -21,11 +21,13 @@ import { SummaryView } from './SummaryView';
 import { CodeBlock } from './CodeBlock';
 import { AiIcon, CodeIcon, ProcessIcon, DownloadIcon, SettingsIcon, PlusIcon, SequentialIcon, BranchIcon, TrashIcon } from './icons';
 import { getSystemInstructions, getParserDisplayName } from '../services/promptSelector';
+import { LLMProvider, LLM_PROVIDER_NAMES } from '../services/llmProvider';
 
 interface ProcessViewProps {
   parsedData: ParsedData;
   fileName: string;
   parserType: string;
+  llmProvider: LLMProvider;
 }
 
 const generateId = () => `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -329,7 +331,7 @@ const AddStepModal: React.FC<{
 };
 
 
-export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, parserType }) => {
+export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, parserType, llmProvider }) => {
   // Get parser-specific system instructions
   const systemInstructions = getSystemInstructions(parserType);
   const parserDisplayName = getParserDisplayName(parserType);
@@ -565,7 +567,21 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
             </div>
           </div>
         )}
-      </div>
+       </div>
+
+       {/* LLM Provider Indicator */}
+       <div className="flex justify-between items-center mb-4 pb-3 border-b border-border-color">
+         <div className="flex items-center gap-2">
+           <AiIcon className="w-5 h-5 text-brand-primary" />
+           <span className="text-sm text-text-secondary">AI Provider:</span>
+           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
+             {LLM_PROVIDER_NAMES[llmProvider]}
+           </span>
+         </div>
+         <div className="text-xs text-text-secondary">
+           Parser: {parserDisplayName}
+         </div>
+       </div>
 
        <div className="border-b border-border-color">
             <nav className="-mb-px flex space-x-6">

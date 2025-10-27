@@ -99,6 +99,7 @@ function App() {
                   >
                     <option value="gemini">{LLM_PROVIDER_NAMES.gemini}</option>
                     <option value="claude">{LLM_PROVIDER_NAMES.claude}</option>
+                    <option value="openai">{LLM_PROVIDER_NAMES.openai}</option>
                   </select>
                   <p className="text-xs text-text-secondary mt-1">
                     Current: {LLM_PROVIDER_NAMES[selectedLLM]}
@@ -110,7 +111,7 @@ function App() {
             <FileUpload onFileUpload={handleFileUpload} setFileName={handleSetFileNames} />
           </div>
         ) : (
-          <ProcessView parsedData={parsedData} fileName={fileName} parserType={selectedParser} />
+          <ProcessView parsedData={parsedData} fileName={fileName} parserType={selectedParser} llmProvider={selectedLLM} />
         )}
       </main>
       <footer className="py-4 mt-8 border-t border-border-color">
