@@ -14,15 +14,18 @@ import {
   VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
   VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
   DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION,
-  stringifyParsedDataForPrompt
-} from '../services/geminiService';
+  stringifyParsedDataForPrompt,
+  aiService
+} from '../services/aiService';
 import { SummaryView } from './SummaryView';
 import { CodeBlock } from './CodeBlock';
 import { AiIcon, CodeIcon, ProcessIcon, DownloadIcon, SettingsIcon, PlusIcon, SequentialIcon, BranchIcon, TrashIcon } from './icons';
+import { getSystemInstructions, getParserDisplayName } from '../services/promptSelector';
 
 interface ProcessViewProps {
   parsedData: ParsedData;
   fileName: string;
+  parserType: string;
 }
 
 const generateId = () => `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -326,7 +329,11 @@ const AddStepModal: React.FC<{
 };
 
 
-export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName }) => {
+export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, parserType }) => {
+  // Get parser-specific system instructions
+  const systemInstructions = getSystemInstructions(parserType);
+  const parserDisplayName = getParserDisplayName(parserType);
+  
   const [summary, setSummary] = useState('');
   const [isSummaryLoading, setIsSummaryLoading] = useState(true);
   const [error, setError] = useState('');
@@ -335,11 +342,11 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName }
   const [workflow, setWorkflow] = useState<WorkflowStep[]>([]);
   
   const [showPromptSettings, setShowPromptSettings] = useState(false);
-  const [summarySystemInstruction, setSummarySystemInstruction] = useState(DEFAULT_SUMMARY_SYSTEM_INSTRUCTION);
-  const [harnessYamlSystemInstruction, setHarnessYamlSystemInstruction] = useState(DEFAULT_HARNESS_YAML_SYSTEM_INSTRUCTION);
-  const [enrichYamlSystemInstruction, setEnrichYamlSystemInstruction] = useState(ENRICH_YAML_SYSTEM_INSTRUCTION);
-  const [validateScriptsSystemInstruction, setValidateScriptsSystemInstruction] = useState(VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION);
-  const [validateSchemaSystemInstruction, setValidateSchemaSystemInstruction] = useState(VALIDATE_SCHEMA_SYSTEM_INSTRUCTION);
+  const [summarySystemInstruction, setSummarySystemInstruction] = useState(systemInstructions.summary);
+  const [harnessYamlSystemInstruction, setHarnessYamlSystemInstruction] = useState(systemInstructions.basePipeline);
+  const [enrichYamlSystemInstruction, setEnrichYamlSystemInstruction] = useState(systemInstructions.enrichPipeline);
+  const [validateScriptsSystemInstruction, setValidateScriptsSystemInstruction] = useState(systemInstructions.validateScripts);
+  const [validateSchemaSystemInstruction, setValidateSchemaSystemInstruction] = useState(systemInstructions.validateSchema);
 
   const [addStepModalState, setAddStepModalState] = useState<{
       isOpen: boolean;
@@ -355,9 +362,9 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName }
   ], [harnessYamlSystemInstruction, enrichYamlSystemInstruction, validateScriptsSystemInstruction, validateSchemaSystemInstruction]);
   
   const getInitialWorkflow = (): WorkflowStep[] => [
-    { id: 'base', parentId: null, title: 'Step 1: Generate Base Pipeline', description: 'Generates the initial pipeline based on the main success path.', systemInstruction: harnessYamlSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: [] },
-    { id: 'enrich', parentId: 'base', title: 'Step 2: Add Missing Steps', description: 'Analyzes the first pipeline and adds logic from the UCD failure paths.', systemInstruction: enrichYamlSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['base'] },
-    { id: 'validate-scripts', parentId: 'enrich', title: 'Step 3: Validate Scripts', description: 'Cross-references the final YAML against the original parsed data to ensure no scripts were missed.', systemInstruction: validateScriptsSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['enrich'] },
+    { id: 'base', parentId: null, title: 'Step 1: Generate Base Pipeline', description: `Generates the initial pipeline based on the ${parserDisplayName} main success path.`, systemInstruction: harnessYamlSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: [] },
+    { id: 'enrich', parentId: 'base', title: 'Step 2: Add Missing Steps', description: `Analyzes the first pipeline and adds logic from the ${parserDisplayName} failure paths.`, systemInstruction: enrichYamlSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['base'] },
+    { id: 'validate-scripts', parentId: 'enrich', title: 'Step 3: Validate Scripts', description: `Cross-references the final YAML against the original ${parserDisplayName} data to ensure no scripts were missed.`, systemInstruction: validateScriptsSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['enrich'] },
     { id: 'validate-schema', parentId: 'validate-scripts', title: 'Step 4: Validate Schema', description: 'Performs a structural validation of the YAML against the Harness schema.', systemInstruction: validateSchemaSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['validate-scripts'] }
   ];
 

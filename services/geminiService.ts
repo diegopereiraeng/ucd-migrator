@@ -1,6 +1,13 @@
 // services/geminiService.ts
 import { GoogleGenAI, Type } from "@google/genai";
 import { ParsedData, ParsedProcess, ParsedStep } from '../types';
+import {
+  JENKINS_SUMMARY_SYSTEM_INSTRUCTION,
+  JENKINS_HARNESS_YAML_SYSTEM_INSTRUCTION,
+  JENKINS_ENRICH_YAML_SYSTEM_INSTRUCTION,
+  JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
+  JENKINS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION
+} from './jenkinsSystemInstructions';
 
 let ai: GoogleGenAI | null = null;
 
@@ -1026,7 +1033,7 @@ Correct Container Step Group (heavy work)
 // 4. ScriptCommandUnitSpec Compliance: Confirm all commandUnits have shell and source
 // Validate the provided Harness CD pipeline configuration against these comprehensive schema requirements, focusing specifically on missing shell and source properties in ScriptCommandUnitSpec, missing failureStrategies, and missing onDelegate properties. Apply all necessary fixes and provide the complete corrected pipeline with detailed validation results.`;
 
-export const DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION = `You are a Harness CI/CD expert. Your task is to generate a new Harness configuration YAML based on a user's request, using the provided context of an existing Harness Pipeline and the original UrbanCode Deploy (UCD) process data.
+export const DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION = `You are a Harness CI/CD expert. Your task is to generate a new Harness configuration YAML based on a user's request, using the provided context of an existing Harness Pipeline and the original UrbanCode Deploy (UCD) or Jenkins process data.
 
 Inputs:
 - A JSON object containing context data. This will always include the original UCD process data under the 'ucdData' key. It may also include results from previous, user-selected generation steps. These results will be keyed by their step titles (e.g., "Generate_Base_Pipeline", "Create_Harness_Service"). You can use one or more of these context results to inform your generation.
@@ -1046,6 +1053,14 @@ Rules:
 Output:
 - **Return ONLY the generated YAML content in a single yaml block.** Do not include explanations or surrounding text.`;
 
+// Re-export Jenkins system instructions for easy access
+export {
+  JENKINS_SUMMARY_SYSTEM_INSTRUCTION,
+  JENKINS_HARNESS_YAML_SYSTEM_INSTRUCTION,
+  JENKINS_ENRICH_YAML_SYSTEM_INSTRUCTION,
+  JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
+  JENKINS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION
+};
 
 export const stringifyParsedDataForPrompt = (parsedData: ParsedData): string => {
     let output = `Component Template: ${parsedData.componentName}\n\n`;
@@ -1089,7 +1104,7 @@ export const stringifyParsedDataForPrompt = (parsedData: ParsedData): string => 
     return output;
 };
 
-const cleanYamlResponse = (rawText: string): string => {
+export const cleanYamlResponse = (rawText: string): string => {
     const yamlRegex = /```yaml\n([\s\S]*?)\n```/;
     const match = rawText.match(yamlRegex);
     return match ? match[1].trim() : rawText.trim();
