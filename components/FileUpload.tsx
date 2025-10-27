@@ -14,9 +14,27 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, setFileNam
       return;
     }
 
-    const validFiles = Array.from(files).filter(file => file.type === 'application/json');
+    // Accept JSON, XML, Groovy, and text files (Jenkinsfile has no extension)
+    const validFiles = Array.from(files).filter(file => {
+      const fileName = file.name.toLowerCase();
+      const fileType = file.type.toLowerCase();
+      
+      return (
+        fileType === 'application/json' ||
+        fileType === 'application/xml' ||
+        fileType === 'text/xml' ||
+        fileType === 'text/plain' ||
+        fileType === '' || // Files without MIME type (like Jenkinsfile)
+        fileName.endsWith('.json') ||
+        fileName.endsWith('.xml') ||
+        fileName.endsWith('.groovy') ||
+        fileName === 'jenkinsfile' ||
+        fileName.includes('jenkinsfile')
+      );
+    });
+    
     if (validFiles.length === 0) {
-      alert('Please upload at least one valid JSON file.');
+      alert('Please upload valid files (JSON, XML, Groovy, or Jenkinsfile).');
       return;
     }
     
@@ -77,9 +95,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, setFileNam
           <p className="mb-2 text-sm text-text-secondary">
             <span className="font-semibold">Click to upload</span> or drag and drop
           </p>
-          <p className="text-xs text-text-secondary">UCD Component Template JSON file(s)</p>
+          <p className="text-xs text-text-secondary">JSON, XML, Groovy, or Jenkinsfile(s)</p>
         </div>
-        <input id="dropzone-file" type="file" className="hidden" accept=".json,application/json" onChange={onFileChange} multiple />
+        <input id="dropzone-file" type="file" className="hidden" onChange={onFileChange} multiple />
       </label>
     </div>
   );
