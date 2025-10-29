@@ -184,6 +184,7 @@ const parseJenkinsfile = (content: string): ParsedStep[] => {
       stagesFound: stages.length,
       stageNames: stages
     },
+    // Keep Jenkinsfile content as it's the main pipeline definition needed for migration
     scriptBody: content,
     incomingPaths: []
   };
@@ -220,9 +221,11 @@ const parseConfigXml = (content: string): ParsedStep => {
       hasBuilders: content.includes('<builders>'),
       hasPublishers: content.includes('<publishers>'),
       hasTriggers: content.includes('<triggers>'),
-      hasScm: content.includes('<scm')
+      hasScm: content.includes('<scm'),
+      contentLength: content.length  // Track size without storing full content
     },
-    scriptBody: content,
+    // Remove scriptBody to reduce token usage - XML config is often very large
+    // Full content is available in bundle summary if needed
     incomingPaths: []
   };
 };
@@ -240,9 +243,11 @@ const parseBuildXml = (content: string): ParsedStep => {
     details: 'Ant Build Configuration',
     properties: {
       targetsFound: targets.length,
-      targetNames: targets
+      targetNames: targets,
+      contentLength: content.length  // Track size without storing full content
     },
-    scriptBody: content,
+    // Remove scriptBody to reduce token usage - XML is often very large
+    // Full content is available in bundle summary if needed
     incomingPaths: []
   };
 };
@@ -279,8 +284,11 @@ const parseGroovyScript = (fileName: string, content: string): ParsedStep => {
       functionsFound: functions.length,
       functionNames: functions,
       hasSharedLibraryAnnotation: content.includes('@Library'),
-      hasNonCPS: content.includes('@NonCPS')
+      hasNonCPS: content.includes('@NonCPS'),
+      contentLength: content.length
     },
+    // Keep Groovy scripts as they contain actual logic needed for migration
+    // These are typically smaller than XML files and contain executable code
     scriptBody: content,
     incomingPaths: []
   };

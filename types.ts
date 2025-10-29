@@ -71,6 +71,60 @@ export interface JenkinsStep {
   parameters?: { [key: string]: any };
 }
 
+// --- Raw GitHub Actions Bundle Interfaces ---
+
+export interface GitHubActionsBundle {
+  workflows: { [fileName: string]: string };
+  compositeActions: { [fileName: string]: string };
+  reusableWorkflows: { [fileName: string]: string };
+  allFiles: { fileName: string; content: string; type: string }[];
+}
+
+export interface GitHubWorkflow {
+  name?: string;
+  on?: GitHubTrigger;
+  env?: { [key: string]: string };
+  jobs: { [jobId: string]: GitHubJob };
+}
+
+export interface GitHubTrigger {
+  push?: any;
+  pull_request?: any;
+  schedule?: any;
+  workflow_dispatch?: any;
+  workflow_call?: any;
+  [key: string]: any;
+}
+
+export interface GitHubJob {
+  name?: string;
+  'runs-on': string | string[];
+  needs?: string | string[];
+  if?: string;
+  strategy?: {
+    matrix?: { [key: string]: any[] };
+    'fail-fast'?: boolean;
+    'max-parallel'?: number;
+  };
+  env?: { [key: string]: string };
+  steps: GitHubStep[];
+  outputs?: { [key: string]: string };
+  'timeout-minutes'?: number;
+}
+
+export interface GitHubStep {
+  name?: string;
+  id?: string;
+  uses?: string;
+  run?: string;
+  with?: { [key: string]: any };
+  env?: { [key: string]: string };
+  if?: string;
+  'continue-on-error'?: boolean;
+  'timeout-minutes'?: number;
+  shell?: string;
+}
+
 // --- Parsed Data Interfaces ---
 
 export interface ParsedPath {

@@ -14,7 +14,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, setFileNam
       return;
     }
 
-    // Accept JSON, XML, Groovy, YAML, and text files (Jenkinsfile has no extension)
+    // Accept JSON, XML, Groovy, YAML, and bundle files (tar, zip)
     const validFiles = Array.from(files).filter(file => {
       const fileName = file.name.toLowerCase();
       const fileType = file.type.toLowerCase();
@@ -26,20 +26,25 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, setFileNam
         fileType === 'text/plain' ||
         fileType === 'application/x-yaml' ||
         fileType === 'text/yaml' ||
-        fileType === 'text/x-yaml' ||
+        fileType === 'application/yaml' ||
+        fileType === 'application/x-tar' ||
+        fileType === 'application/zip' ||
+        fileType === 'application/x-zip-compressed' ||
         fileType === '' || // Files without MIME type (like Jenkinsfile)
         fileName.endsWith('.json') ||
         fileName.endsWith('.xml') ||
         fileName.endsWith('.groovy') ||
-        fileName.endsWith('.yaml') ||
         fileName.endsWith('.yml') ||
+        fileName.endsWith('.yaml') ||
+        fileName.endsWith('.tar') ||
+        fileName.endsWith('.zip') ||
         fileName === 'jenkinsfile' ||
         fileName.includes('jenkinsfile')
       );
     });
     
     if (validFiles.length === 0) {
-      alert('Please upload valid files (JSON, XML, Groovy, YAML, or Jenkinsfile).');
+      alert('Please upload valid files (JSON, XML, Groovy, YAML, or bundle files).');
       return;
     }
     
@@ -100,7 +105,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, setFileNam
           <p className="mb-2 text-sm text-text-secondary">
             <span className="font-semibold">Click to upload</span> or drag and drop
           </p>
-          <p className="text-xs text-text-secondary">JSON, XML, Groovy, YAML, or Jenkinsfile(s)</p>
+          <p className="text-xs text-text-secondary">JSON, XML, Groovy, YAML, or bundle files (tar/zip)</p>
         </div>
         <input id="dropzone-file" type="file" className="hidden" onChange={onFileChange} multiple />
       </label>

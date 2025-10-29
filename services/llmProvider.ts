@@ -22,8 +22,8 @@ export const LLM_MODELS = {
     pro: 'gemini-2.5-pro',
   },
   claude: {
-    fast: 'claude-3-5-haiku-20241022',
-    pro: 'claude-3-5-sonnet-20241022',
+    fast: 'claude-3-5-haiku-20241022',    // For quick summaries
+    pro: 'claude-3-opus-20240229',        // For detailed summaries
   },
   openai: {
     fast: 'gpt-4o-mini',
