@@ -1,6 +1,7 @@
 // services/parserService.ts
 import { parseUCD } from './ucdParser';
 import { parseJenkins } from './jenkinsParser';
+import { parseYAML } from './yamlParser';
 import { ParsedData } from '../types';
 
 export type ParserFunction = (jsonContents: string[]) => ParsedData | null;
@@ -13,6 +14,10 @@ export const parsers: { [key: string]: { name: string; parse: ParserFunction } }
   jenkins: {
     name: 'Jenkins Deploy',
     parse: parseJenkins,
+  },
+  yaml: {
+    name: 'YAML Pipeline',
+    parse: parseYAML,
   },
 };
 
