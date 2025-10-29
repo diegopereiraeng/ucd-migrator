@@ -23,7 +23,7 @@ export const LLM_MODELS = {
   },
   claude: {
     fast: 'claude-3-5-haiku-20241022',    // For quick summaries
-    pro: 'claude-3-opus-20240229',        // For detailed summaries
+    pro: 'claude-sonnet-4-20250514',    // For detailed summaries (latest flagship model)
   },
   openai: {
     fast: 'gpt-4o-mini',
