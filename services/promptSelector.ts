@@ -14,6 +14,13 @@ import {
   JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
   JENKINS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
 } from './aiService';
+import {
+  GITHUB_ACTIONS_SUMMARY_SYSTEM_INSTRUCTION,
+  GITHUB_ACTIONS_HARNESS_YAML_SYSTEM_INSTRUCTION,
+  GITHUB_ACTIONS_ENRICH_YAML_SYSTEM_INSTRUCTION,
+  GITHUB_ACTIONS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
+  GITHUB_ACTIONS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
+} from './githubActionsSystemInstructions';
 
 export interface SystemInstructions {
   summary: string;
@@ -36,7 +43,16 @@ export function getSystemInstructions(parserType: string): SystemInstructions {
         enrichPipeline: JENKINS_ENRICH_YAML_SYSTEM_INSTRUCTION,
         validateScripts: JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
         validateSchema: JENKINS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
-        customGeneration: DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION, // Can be used for both
+        customGeneration: DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION,
+      };
+    case 'githubActions':
+      return {
+        summary: GITHUB_ACTIONS_SUMMARY_SYSTEM_INSTRUCTION,
+        basePipeline: GITHUB_ACTIONS_HARNESS_YAML_SYSTEM_INSTRUCTION,
+        enrichPipeline: GITHUB_ACTIONS_ENRICH_YAML_SYSTEM_INSTRUCTION,
+        validateScripts: GITHUB_ACTIONS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
+        validateSchema: GITHUB_ACTIONS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
+        customGeneration: DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION,
       };
     case 'ucd':
     default:
@@ -58,6 +74,8 @@ export function getParserDisplayName(parserType: string): string {
   switch (parserType) {
     case 'jenkins':
       return 'Jenkins';
+    case 'githubActions':
+      return 'Github Action Deploy';
     case 'ucd':
       return 'UrbanCode Deploy';
     default:
