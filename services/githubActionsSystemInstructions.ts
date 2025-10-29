@@ -33,9 +33,18 @@ Please perform the following tasks:
    - List of steps with detailed explanation:
      * Step name
      * What it does
-     * Commands/actions used
+     * Commands/actions used (format all bash scripts, shell commands, and code snippets in proper markdown code blocks with language identifier, e.g., \`\`\`bash)
      * Harness equivalent (plugin/step type)
      * Any special configurations needed
+   
+   **IMPORTANT FORMATTING RULES:**
+   - All bash scripts, shell commands, and code snippets MUST be formatted in markdown code blocks
+   - Use \`\`\`bash for bash/shell scripts
+   - Use \`\`\`yaml for YAML configuration snippets
+   - Use \`\`\`json for JSON snippets
+   - Multi-line scripts must use triple backticks (\`\`\`), not single backticks
+   - Single-line commands can use single backticks (\`command\`)
+   - Ensure proper indentation within code blocks
 
 3. **Identify Migration Considerations**
    - List any GitHub Actions that don't have direct Harness equivalents
