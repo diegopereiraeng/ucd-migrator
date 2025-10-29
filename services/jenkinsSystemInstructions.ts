@@ -205,29 +205,101 @@ Review the existing Harness YAML and the complete Jenkins bundle data. Add any m
 **Output:**
 Return the FULL enriched Harness pipeline YAML (not just the changes).`;
 
-export const JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION = `You are validating that all scripts from a Jenkins bundle have been included in the Harness pipeline YAML.
+export const JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION = `You are performing final validation and ensuring complete parity between a Jenkins bundle and the generated Harness pipeline YAML.
 
 **Task:**
-Cross-reference all scripts found in the Jenkins bundle against the Harness YAML:
-- Jenkinsfile: All sh/bat/powershell script blocks
-- Groovy scripts: All function bodies from shared libraries
-- build.xml: Ant task commands
-- config.xml: Pre/post build scripts
+Perform comprehensive validation to ensure the Harness pipeline has 100% functional parity with the Jenkins bundle:
+
+1. **Script Completeness Validation:**
+   - Cross-reference ALL scripts from Jenkins bundle against Harness YAML:
+     * Jenkinsfile: All sh/bat/powershell script blocks
+     * Groovy scripts: All function bodies from shared libraries
+     * build.xml: Ant task commands
+     * config.xml: Pre/post build scripts
+   - Create a checklist of scripts:
+     * Script found in Harness YAML
+     * Script missing from Harness YAML
+
+2. **Stage and Step Parity Validation:**
+   - Verify ALL Jenkins stages are represented in Harness stages
+   - Verify ALL Jenkins steps are represented in Harness steps
+   - Check stage execution order matches Jenkins pipeline flow
+   - Validate conditional logic (when conditions) is preserved
+   - Ensure parallel execution blocks are maintained
+   - Verify post-build actions (success/failure/always) are included
+
+3. **Configuration Completeness:**
+   - All environment variables are mapped
+   - All parameters/inputs are included
+   - All credentials/secrets are referenced
+   - Agent/infrastructure mapping is complete
+   - Timeout settings are preserved
 
 **Validation Process:**
-1. Extract all script content from Jenkins bundle
-2. Search for each script in the Harness YAML
-3. Create a checklist:
-   - ✅ Script found in Harness YAML
-   - ❌ Script missing from Harness YAML
+1. Extract all script content and pipeline structure from Jenkins bundle
+2. Search for each script and structural element in the Harness YAML
+3. Identify any missing scripts, stages, or steps
+4. If issues found, correct them by adding missing elements
 
-**If All Scripts Found:**
-Output: "✅ All scripts validated. All Jenkins scripts have been successfully migrated to the Harness pipeline."
+**Output Format:**
 
-**If Scripts Missing:**
-Output the FULL corrected Harness pipeline YAML with all missing scripts added in appropriate steps. Add comments above each added script explaining where it came from in the Jenkins bundle.
+**IMPORTANT:** You MUST ALWAYS return the FULL Harness pipeline YAML, regardless of validation results.
 
-**No additional commentary beyond the validation result or corrected YAML.**`;
+**If All Validations Pass:**
+Return the COMPLETE Harness pipeline YAML with a validation comment at the top:
+\`\`\`yaml
+# VALIDATION PASSED: All Jenkins scripts, stages, and steps have been successfully migrated
+# All script blocks validated and included
+# Stage/step parity confirmed
+# Configuration completeness verified
+pipeline:
+  name: ...
+  # (rest of the complete YAML)
+\`\`\`
+
+**If Issues Found:**
+Return the COMPLETE CORRECTED Harness pipeline YAML with:
+1. A summary comment at the top listing what was fixed
+2. Inline comments above each added/corrected element explaining the fix
+3. All missing scripts added to appropriate steps
+4. All missing stages/steps added in correct order
+
+Example:
+\`\`\`yaml
+# VALIDATION CORRECTIONS APPLIED:
+# - Added missing cleanup script from Jenkins post block
+# - Added missing notification step from Jenkinsfile line 45
+# - Fixed stage ordering to match Jenkins execution flow
+pipeline:
+  name: ...
+  stages:
+    - stage:
+        name: Build
+        # ... existing content ...
+    - stage:
+        name: Cleanup
+        # Added: Missing cleanup stage from Jenkins post{always{}}
+        # Original Jenkins: Jenkinsfile lines 78-82
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Cleanup Workspace
+                  spec:
+                    command: |
+                      # Migrated from Jenkins post{always{}} block
+                      rm -rf target/
+                      docker system prune -f
+\`\`\`
+
+**Rules:**
+- ALWAYS return complete YAML (never just a validation message)
+- If validation passes, return the input YAML with success comment
+- If issues found, return corrected YAML with explanation comments
+- Preserve all existing correct elements
+- Maintain proper YAML indentation and structure
+- No additional text outside the YAML code block`;
 
 export const JENKINS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION = `You are a Harness pipeline YAML schema validator focused on ensuring the converted Jenkins pipeline is valid.
 
@@ -265,7 +337,7 @@ export const JENKINS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION = `You are a Harness pip
 **Output Format:**
 
 If valid:
-"✅ Schema validation passed. The Harness pipeline YAML is structurally correct."
+"Schema validation passed. The Harness pipeline YAML is structurally correct."
 
 If invalid:
 Return the FULL corrected pipeline YAML with all schema issues fixed. Add comments explaining what was corrected.`;
