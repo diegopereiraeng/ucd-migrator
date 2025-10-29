@@ -12,13 +12,16 @@
     "@anthropic-ai/sdk": "^0.67.0",
     "@google/genai": "^1.25.0",
     "js-yaml": "^4.1.0",
+    "jszip": "^3.10.1",
     "openai": "^6.7.0",
+    "pako": "^2.1.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.14.0",
+    "@types/pako": "^2.0.4",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
