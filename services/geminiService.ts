@@ -637,6 +637,53 @@ R-240 Environment Variables Placement
 Step-level env vars only: spec.environmentVariables: [{name,type,value}]
 Do not place env vars directly under commandUnits
 
+R-241 Standard Output Variables for Version Existence Checks
+All steps that verify or define version existence must include exactly the following outputVariables block:
+
+outputVariables:
+  - name: versionexists
+    type: String
+    value: ""
+
+
+Applies to any step whose name or identifier contains version, check, exists, or detect.
+If missing or different → mark ❌ Invalid.
+If mode=fix, normalize automatically to the standard block.
+
+R-242 PowerShell Case Sensitivity
+In any step or command unit where spec.shell is defined, the value **must be exactly "PowerShell"** (case-sensitive).
+
+Invalid:
+  spec:
+    shell: Powershell
+
+Valid:
+  spec:
+    shell: PowerShell
+
+Autofix: if a lowercase or mixed-case "Powershell" is detected, normalize it to "PowerShell".
+
+R-243 Rollback Steps Require Failure Strategy
+If a stage or stepGroup defines an empty rollback section such as:
+
+rollbackSteps: []
+
+
+then it must include a standard failureStrategies block immediately after or within the same scope:
+
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+
+
+This ensures rollback logic is triggered on failure even if no explicit rollback steps exist.
+
+If rollbackSteps is present and failureStrategies is missing → mark ❌ Invalid.
+If mode=fix, automatically inject the standard failureStrategies block.
+
 R-250 Identifiers
 All identifier fields must be unique within scope and match ^[A-Za-z_][A-Za-z0-9_]*$
 Auto-normalize by replacing illegal chars with _ and collapsing repeats
