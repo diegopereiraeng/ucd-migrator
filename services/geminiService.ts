@@ -529,40 +529,25 @@ No extra commentary.
 
 CORE RULES (CD-ONLY)
 R-100 Stage Required Fields
-
 Every stage must include:
-
-name (string)
-
-identifier (regex: ^[A-Za-z_][A-Za-z0-9_]*$)
-
-type ∈ {Deployment, Custom, Approval, Pipeline}
-
-spec (object)
-
-failureStrategies (array) mandatory for all non-Approval stages
+  name (string)
+  identifier (regex: ^[A-Za-z_][A-Za-z0-9_]*$)
+  type ∈ {Deployment, Custom, Approval, Pipeline}
+  spec (object)
+  failureStrategies (array) mandatory for all non-Approval stages
 
 R-110 Deployment Stage Requirements
-
 If stage.type == Deployment:
-
-spec.deploymentType present (e.g., Ssh, Kubernetes, ServerlessAwsLambda, …)
-
-spec.service.serviceRef present (may be <+input>)
-
-spec.environment.environmentRef present (may be <+input>)
-
-spec.execution.steps present (array)
-
-failureStrategies present (R-150)
+  spec.deploymentType present (e.g., Ssh, Kubernetes, ServerlessAwsLambda, …)
+  spec.service.serviceRef present (may be <+input>)
+  spec.environment.environmentRef present (may be <+input>)
+  spec.execution.steps present (array)
+  failureStrategies present (R-150)
 
 R-120 Custom Stage Requirements
-
 If stage.type == Custom:
-
-spec.execution.steps present (array)
-
-failureStrategies present (R-150)
+  spec.execution.steps present (array)
+  failureStrategies present (R-150)
 
 R-150 Failure Strategies (Non-Approval Mandatory)
 failureStrategies:
@@ -574,297 +559,173 @@ failureStrategies:
 
 EXECUTION SEMANTICS (THREE LAYERS)
 R-200 Execution Target (Correct)
-Step type	Must run on	onDelegate requirement
-ShellScript	Delegate	spec.onDelegate: true (mandatory)
-Command	Target host (SSH)	spec.onDelegate: false or omitted
-stepGroup (Container)	Ephemeral Pod	onDelegate must not be present
-Run / Plugin (inside container group)	Pod	no onDelegate
+Step type  Must run on        onDelegate requirement
+ShellScript   Delegate        spec.onDelegate: true (mandatory)
+Command       Target host (SSH) spec.onDelegate: false or omitted
+stepGroup (Container) Ephemeral Pod onDelegate must not be present
+Run / Plugin (inside container group) Pod no onDelegate
 
 Never set onDelegate: true on a Command step (breaks SSH by running locally).
 
 STRUCTURE RULES
 R-210 ScriptCommandUnitSpec (inside Command steps)
-
 For each commandUnit with type: Script:
-
-spec.shell (one of: Bash, Sh, PowerShell)
-
-spec.source.type ∈ {Inline, Harness}
-
-spec.source.spec.script (string)
+  spec.shell (one of: Bash, Sh, PowerShell)
+  spec.source.type ∈ {Inline, Harness}
+  spec.source.spec.script (string)
 
 R-220 ShellScript Step Structure
-
 Each ShellScript step:
-
-spec:
-  onDelegate: true
-  shell: Bash|Sh|PowerShell
-  source:
-    type: Inline|Harness
-    spec:
-      script: |
-        ...
-  environmentVariables: []  # default ok
-  outputVariables: []       # default ok
+  spec:
+    onDelegate: true
+    shell: Bash|Sh|PowerShell
+    source:
+      type: Inline|Harness
+      spec:
+        script: |
+          ...
+    environmentVariables: []  # default ok
+    outputVariables: []       # default ok
 
 R-230 Container Step Group (CD)
-
 A container step group:
+  Node: stepGroup with type: Container
+  Must contain .spec.execution.steps[] with only Run or Plugin steps
+  No onDelegate at group or child steps
+  Children must specify container-native fields per type (e.g., command for Run)
 
-Node: stepGroup with type: Container
+R-235 Inline StepGroup Normalization
+Inline stepGroups (without template) must use:
+  steps: []
+Not:
+  spec.execution.steps
+Autofix: move steps from spec.execution.steps → steps, remove spec.execution
 
-Must contain .spec.execution.steps[] with only Run or Plugin steps
+R-236 Standard Output Variables
+All step outputVariables that belong to CD tooling/Hub/Blackduck must follow the canonical structure:
+  outputVariables:
+    - name: runHubDetect
+      type: String
+      value: ""
+    - name: bdsProjectName
+      type: String
+      value: ""
+    - name: bdsCodeLocation
+      type: String
+      value: ""
+    - name: bdsVersionName
+      type: String
+      value: ""
+    - name: bdsVersionStatus
+      type: String
+      value: ""
+Autofix: add missing variables with empty string if assume_defaults=true
 
-No onDelegate at group or child steps
+R-237 Schema Compliance
+Validate entire pipeline YAML against the official Harness schema:
+https://raw.githubusercontent.com/harness/harness-schema/main/v0/pipeline.json
+Status must be ❌ Invalid if schema violations exist
+Autofix: only safe injections of defaults (timeout, env vars, failureStrategies)
 
-Children must specify container-native fields per type (e.g., command for Run)
+R-238 When Block Requirements
+All when blocks that include a condition field must also include stageStatus.
+This applies regardless of the complexity or nesting of the condition (e.g., <+steps.someStep.output.outputVariables.var> == "value").
+Autofix: if stageStatus is missing, inject:
+  stageStatus: Success
+
+R-239 Barrier Step Requirements
+All steps with type: Barrier must include a spec block with a barrierRef property.
+This applies regardless of the step’s position or nesting in the pipeline.
+Autofix: if barrierRef is missing, inject:
+spec:
+barrierRef: deploy_lock_<+env.name>_<+service.name>
 
 R-240 Environment Variables Placement
-
 Step-level env vars only: spec.environmentVariables: [{name,type,value}]
-
 Do not place env vars directly under commandUnits
 
+R-241 Standard Output Variables for Version Existence Checks
+All steps that verify or define version existence must include exactly the following outputVariables block:
+
+outputVariables:
+  - name: versionexists
+    type: String
+    value: ""
+
+
+Applies to any step whose name or identifier contains version, check, exists, or detect.
+If missing or different → mark ❌ Invalid.
+If mode=fix, normalize automatically to the standard block.
+
+R-242 PowerShell Case Sensitivity
+In any step or command unit where spec.shell is defined, the value **must be exactly "PowerShell"** (case-sensitive).
+
+Invalid:
+  spec:
+    shell: Powershell
+
+Valid:
+  spec:
+    shell: PowerShell
+
+Autofix: if a lowercase or mixed-case "Powershell" is detected, normalize it to "PowerShell".
+
+R-243 Rollback Steps Require Failure Strategy
+If a stage or stepGroup defines an empty rollback section such as:
+
+rollbackSteps: []
+
+
+then it must include a standard failureStrategies block immediately after or within the same scope:
+
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+
+
+This ensures rollback logic is triggered on failure even if no explicit rollback steps exist.
+
+If rollbackSteps is present and failureStrategies is missing → mark ❌ Invalid.
+If mode=fix, automatically inject the standard failureStrategies block.
+
 R-250 Identifiers
-
 All identifier fields must be unique within scope and match ^[A-Za-z_][A-Za-z0-9_]*$
-
 Auto-normalize by replacing illegal chars with _ and collapsing repeats
 
 R-260 Timeouts
-
 Any step missing timeout → default 10m (if assume_defaults=true)
 
 HEAVY-WORK ENFORCEMENT (AUTO-MOVE)
 R-300 Execution Placement Correctness
+Detect heavy/isolation-worthy tasks (builds, scans, packaging, Docker/Gradle/Maven/NPM/Yarn, long CPU/IO) incorrectly placed in ShellScript.
+If detected → Auto-Move to Container Step Group as Run step (unless mode=validate_only)
+Preserve script, env vars, timeout, identifier, etc.
 
-You must detect “heavy” or isolation-worthy tasks (builds, scans, packaging, Docker/Gradle/Maven/NPM/Yarn, long-running CPU/IO) incorrectly placed in ShellScript or elsewhere.
-
-If detected in ShellScript → Auto-Move to a Container Step Group (unless mode=validate_only).
-
-Examples of heavy signals (non-exhaustive heuristics):
-
-Commands: docker build, docker run, kubectl, helm template/package, gradle/gradlew, mvn, npm ci|install|run build, yarn, pnpm, trivy, grype, snyk, apt-get/yum (extensive), tar large packs, jq over large JSON, codegen/compilation.
-
-Loops performing file compilation or large artifact manipulation.
-
-Explicit resource notes like “build”, “package”, “scan”, “generate”, “compile”.
-
-Auto-Move Algorithm (when mode=f ix)
-
-Extract the heavy ShellScript step (YAML path).
-
-Create (or reuse if present immediately prior in sequence) a stepGroup:
-
-- stepGroup:
-    name: PreDeploy_Container_Work
-    identifier: PreDeploy_Container_Work
-    type: Container
-    spec:
-      execution:
-        steps: []
-
-
-Ensure a unique identifier; append numeric suffix if needed.
-
-Transform the heavy script into a Run step inside this group:
-
-Move script under spec.command.
-
-Remove onDelegate.
-
-Set default container image if none provided (see Defaults).
-
-Preserve environment variables as step-level env vars.
-
-Preserve timeouts (or apply default).
-
-Insert the container group before the first Command step that deploys, or keep relative order if already before deployment.
-
-Leave light-logic ShellScript steps on the delegate.
-
-Report such changes as 🔁 Auto-Moved with before/after snippets.
-
-DEFAULTS (used only if assume_defaults=true)
-
-Failure strategies (R-150)
-
+DEFAULTS (assume_defaults=true)
+Failure strategies: R-150
 Shell: Bash (ShellScript & Script commandUnits)
-
-Container group default image for Run: alpine:3.20 (opinionated, fast)
-
-If the script obviously needs a build tool, choose reasonable base:
-
-docker:27-cli, gradle:8-jdk17, maven:3.9-eclipse-temurin-17, node:20, etc. (pick minimally sufficient)
-
-source.type: Inline
-
-source.spec.script: echo "TODO: add script"
-
-environmentVariables: []
-
-outputVariables: []
-
-timeout: 10m
+Container Run image: alpine:3.20
+Timeout: 10m
+EnvironmentVariables: []
+OutputVariables: []
+Source.type: Inline
+Source.spec.script: echo "TODO: add script"
 
 AUTO-FIX POLICY
+Add missing mandatory fields (R-100…R-260)
+Enforce R-200 onDelegate semantics
+Inject failure strategies (R-150)
+Normalize identifiers (R-250)
+Auto-Move heavy ShellScript to container group (R-300)
+Apply R-235, R-236, R-238 autofixes
+Never change stage.type or deploymentType
+Never delete user script content (preserve script verbatim as spec.command)
+If a safe fix is impossible, mark ❌ Invalid and provide the exact delta
+`;
 
-Add missing mandatory fields (R-100…R-260).
-
-Enforce R-200 onDelegate semantics (ShellScript true, Command false/omitted, Container none).
-
-Inject failure strategies on non-Approval stages (R-150).
-
-Normalize identifiers (R-250).
-
-Auto-Move heavy ShellScript content to container group (R-300).
-
-Never change stage.type or deploymentType.
-
-Never delete user script content; when transforming to Run, preserve script verbatim as spec.command.
-
-If a safe fix is impossible, mark ❌ Invalid and provide the exact required delta.
-
-REPORTING TEMPLATE (USE AS-IS)
-
-validation_report
-
-Status: ❌ Invalid
-Rule: R-210 ScriptCommandUnitSpec
-Location: stages[1].stage.spec.execution.steps[0].step.spec.commandUnits[0]
-Line: n/a
-Details: spec.shell and spec.source missing in Script commandUnit.
-Required Fix: add spec.shell: Bash and spec.source: {type: Inline, spec: {script: "<script>"}}.
-Applied Fix:
-
-spec:
-  shell: Bash
-  source:
-    type: Inline
-    spec:
-      script: |
-        echo "TODO: add script"
-
-
-Status: 🔁 Auto-Moved
-Rule: R-300 Execution Placement Correctness
-Location: stages[0].stage.spec.execution.steps[1].step
-Line: 118
-Details: Heavy build detected in ShellScript (docker build).
-Required Fix: run heavy work in a container step group as a Run step.
-Applied Fix:
-
-- stepGroup:
-    name: PreDeploy_Container_Work
-    identifier: PreDeploy_Container_Work
-    type: Container
-    spec:
-      execution:
-        steps:
-          - step:
-              type: Run
-              name: Docker_Build
-              identifier: Docker_Build
-              timeout: 15m
-              spec:
-                image: docker:27-cli
-                command: |
-                  docker build -t "$IMAGE" .
-                environmentVariables: []
-
-
-corrected_pipeline_yaml
-
-# full corrected pipeline here
-
-EXAMPLE SNIPPETS (REFERENCE)
-
-Correct ShellScript (light, delegate)
-
-- step:
-    type: ShellScript
-    name: Validate_Inputs
-    identifier: Validate_Inputs
-    timeout: 5m
-    spec:
-      onDelegate: true
-      shell: Bash
-      source:
-        type: Inline
-        spec:
-          script: |
-            test -n "<+service.name>" || { echo "service.name missing"; exit 1; }
-      environmentVariables: []
-      outputVariables: []
-
-
-Correct Command with Script commandUnits (remote host)
-
-- step:
-    type: Command
-    name: Deploy_App
-    identifier: Deploy_App
-    timeout: 15m
-    spec:
-      host: <+repeat.item>
-      # onDelegate omitted (remote)
-      environmentVariables:
-        - name: appName
-          type: String
-          value: <+service.name>
-      commandUnits:
-        - identifier: Stop_Service
-          name: Stop Service
-          type: Script
-          spec:
-            shell: Bash
-            source:
-              type: Inline
-              spec:
-                script: |
-                  systemctl stop tomcat
-        - identifier: Copy_Artifact
-          name: Copy Artifact
-          type: Script
-          spec:
-            shell: Bash
-            source:
-              type: Inline
-              spec:
-                script: |
-                  cp /opt/artifacts/app.war /opt/tomcat/webapps/ROOT.war
-        - identifier: Start_Service
-          name: Start Service
-          type: Script
-          spec:
-            shell: Bash
-            source:
-              type: Inline
-              spec:
-                script: |
-                  systemctl start tomcat
-
-
-Correct Container Step Group (heavy work)
-
-- stepGroup:
-    name: PreDeploy_Container_Work
-    identifier: PreDeploy_Container_Work
-    type: Container
-    spec:
-      execution:
-        steps:
-          - step:
-              type: Run
-              name: Build_Image
-              identifier: Build_Image
-              timeout: 15m
-              spec:
-                image: docker:27-cli
-                command: |
-                  docker build -t "$IMAGE" .
-                environmentVariables: []`;
 // export const VALIDATE_SCHEMA_SYSTEM_INSTRUCTION = `
 // You are a Harness CD pipeline schema validator. Your task is to analyze Harness CD stage configurations and validate them against the official schema requirements, including mandatory failure strategies, delegate execution settings, and proper command unit specifications. After validation, apply fixes and provide the complete corrected pipeline code.
 

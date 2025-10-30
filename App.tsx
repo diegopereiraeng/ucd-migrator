@@ -29,15 +29,27 @@ function App() {
     }
 
     const data = parserFunc(files);
-    if (data && data.processes.length > 0) {
+    console.log('Parsed data:', data);
+
+    // 🧩 TypeScript-safe check (permite estructuras variadas sin romper tipos)
+    const d = data as any;
+
+    const hasProcesses =
+      (Array.isArray(d?.processes) && d.processes.length >= 0) ||
+      (Array.isArray(d?.genericProcesses) && d.genericProcesses.length >= 0) ||
+      (Array.isArray(d?.componentProcesses) && d.componentProcesses.length >= 0);
+
+    if (data && hasProcesses) {
       setParsedData(data);
     } else {
-      setError('Invalid or empty file(s). Please check the file format and ensure it contains valid processes.');
+      setError(
+        'Invalid JSON file(s). Please check the file format and ensure it matches a supported structure (processes, genericProcesses, or componentProcesses).'
+      );
       setParsedData(null);
       setFileName('');
     }
   };
-  
+
   const handleSetFileNames = (names: string[]) => {
     setFileName(names.join(', '));
   };
@@ -50,11 +62,14 @@ function App() {
 
   return (
     <div className="bg-background-dark min-h-screen text-text-primary font-sans">
+      {/* Header */}
       <header className="py-4 border-b border-border-color">
         <div className="container mx-auto px-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <AiIcon className="w-8 h-8 text-brand-primary" />
-            <h1 className="text-xl font-bold">Harness Jenkins Pipeline Analyzer & Migration Assistant</h1>
+            <h1 className="text-xl font-bold">
+              Harness UCD Process Analyzer & Migration Assistant
+            </h1>
           </div>
           {parsedData && (
             <button
@@ -66,45 +81,61 @@ function App() {
           )}
         </div>
       </header>
+
+      {/* Main */}
       <main className="container mx-auto px-4 py-8">
         {!parsedData ? (
           <div>
             <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold">Upload Source CI/CD File(s)</h2>
-                <p className="text-text-secondary mt-2">Select a parser and upload one or more exported template files to begin.</p>
+              <h2 className="text-3xl font-bold">Upload Source CI/CD File(s)</h2>
+              <p className="text-text-secondary mt-2">
+                Select a parser and upload one or more exported template files to begin.
+              </p>
             </div>
-            
+
             <div className="max-w-md mx-auto mb-6 space-y-4">
-                <div>
-                  <label htmlFor="parser-select" className="block text-sm font-medium text-text-secondary mb-2">Select Parser:</label>
-                  <select 
-                    id="parser-select"
-                    value={selectedParser}
-                    onChange={(e) => setSelectedParser(e.target.value)}
-                    className="w-full p-2 bg-card-dark border border-border-color rounded-lg focus:ring-brand-primary focus:border-brand-primary"
-                  >
-                    {Object.entries(parsers).map(([key, parser]) => (
-                      <option key={key} value={key}>{parser.name}</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label htmlFor="llm-select" className="block text-sm font-medium text-text-secondary mb-2">Select AI Provider:</label>
-                  <select 
-                    id="llm-select"
-                    value={selectedLLM}
-                    onChange={(e) => handleLLMChange(e.target.value as LLMProvider)}
-                    className="w-full p-2 bg-card-dark border border-border-color rounded-lg focus:ring-brand-primary focus:border-brand-primary"
-                  >
-                    <option value="gemini">{LLM_PROVIDER_NAMES.gemini}</option>
-                    <option value="claude">{LLM_PROVIDER_NAMES.claude}</option>
-                    <option value="openai">{LLM_PROVIDER_NAMES.openai}</option>
-                  </select>
-                  <p className="text-xs text-text-secondary mt-1">
-                    Current: {LLM_PROVIDER_NAMES[selectedLLM]}
-                  </p>
-                </div>
+              <div>
+                <label
+                  htmlFor="parser-select"
+                  className="block text-sm font-medium text-text-secondary mb-2"
+                >
+                  Select Parser:
+                </label>
+                <select
+                  id="parser-select"
+                  value={selectedParser}
+                  onChange={(e) => setSelectedParser(e.target.value)}
+                  className="w-full p-2 bg-card-dark border border-border-color rounded-lg focus:ring-brand-primary focus:border-brand-primary"
+                >
+                  {Object.entries(parsers).map(([key, parser]) => (
+                    <option key={key} value={key}>
+                      {parser.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="llm-select"
+                  className="block text-sm font-medium text-text-secondary mb-2"
+                >
+                  Select AI Provider:
+                </label>
+                <select
+                  id="llm-select"
+                  value={selectedLLM}
+                  onChange={(e) => handleLLMChange(e.target.value as LLMProvider)}
+                  className="w-full p-2 bg-card-dark border border-border-color rounded-lg focus:ring-brand-primary focus:border-brand-primary"
+                >
+                  <option value="gemini">{LLM_PROVIDER_NAMES.gemini}</option>
+                  <option value="claude">{LLM_PROVIDER_NAMES.claude}</option>
+                  <option value="openai">{LLM_PROVIDER_NAMES.openai}</option>
+                </select>
+                <p className="text-xs text-text-secondary mt-1">
+                  Current: {LLM_PROVIDER_NAMES[selectedLLM]}
+                </p>
+              </div>
             </div>
 
             {error && <p className="text-center text-red-500 mb-4">{error}</p>}
@@ -114,6 +145,8 @@ function App() {
           <ProcessView parsedData={parsedData} fileName={fileName} parserType={selectedParser} llmProvider={selectedLLM} onLLMChange={handleLLMChange} />
         )}
       </main>
+
+      {/* Footer */}
       <footer className="py-4 mt-8 border-t border-border-color">
         <div className="container mx-auto px-4 text-center text-text-secondary text-sm">
           <p>Created by Diego Pereira</p>
