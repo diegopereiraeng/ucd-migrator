@@ -1,5 +1,6 @@
 // services/ucdParser.ts
 import { UCDComponentTemplate, UCDProcess, Step, Edge, ParsedData, ParsedProcess, ParsedStep, ParsedPath } from '../types';
+import { FileInput } from './parserService';
 
 const getStepDetails = (step: Step): string => {
   switch (step.type) {
@@ -159,15 +160,15 @@ const parseProcess = (process: UCDProcess): ParsedProcess => {
 };
 
 
-export const parseUCD = (jsonContents: string[]): ParsedData | null => {
+export const parseUCD = (files: FileInput[]): ParsedData | null => {
   try {
     const allProcesses: UCDProcess[] = [];
     const componentNames: string[] = [];
 
-    for (const jsonContent of jsonContents) {
-      const data: UCDComponentTemplate = JSON.parse(jsonContent);
+    for (const { fileName, content } of files) {
+      const data: UCDComponentTemplate = JSON.parse(content);
       if (!data.name || (!data.processes && !data.genericProcesses)) {
-        console.warn('Skipping a file due to invalid UCD Component Template JSON structure.', data.name);
+        console.warn(`Skipping file '${fileName}' due to invalid UCD Component Template JSON structure.`);
         continue;
       }
       componentNames.push(data.name);

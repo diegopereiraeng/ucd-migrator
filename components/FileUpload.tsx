@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { UploadIcon } from './icons';
 import { extractArchive, filterRelevantFiles, ExtractedFile } from '../services/archiveExtractor';
+import { FileInput } from '../services/parserService';
 
 interface FileUploadProps {
-  onFileUpload: (contents: string[]) => void;
+  onFileUpload: (files: FileInput[]) => void;
   setFileName: (names: string[]) => void;
 }
 
@@ -52,18 +53,19 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, setFileNam
     }
     
     try {
-      const allContents: string[] = [];
+      const allFiles: FileInput[] = [];
       const allFileNames: string[] = [];
       
       for (const file of validFiles) {
-        const fileName = file.name.toLowerCase();
+        const fileName = file.name;
+        const lowerFileName = fileName.toLowerCase();
         
         // Check if it's an archive file
         const isArchive = 
-          fileName.endsWith('.tar') ||
-          fileName.endsWith('.tar.gz') ||
-          fileName.endsWith('.tgz') ||
-          fileName.endsWith('.zip');
+          lowerFileName.endsWith('.tar') ||
+          lowerFileName.endsWith('.tar.gz') ||
+          lowerFileName.endsWith('.tgz') ||
+          lowerFileName.endsWith('.zip');
         
         if (isArchive) {
           // Extract archive and get all files (including nested folders)
@@ -78,8 +80,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, setFileNam
           
           // Add all extracted file contents
           relevantFiles.forEach(extracted => {
-            allContents.push(extracted.content);
-            allFileNames.push(`${file.name}/${extracted.path}`);
+            const fullPath = `${file.name}/${extracted.path}`;
+            allFiles.push({ fileName: fullPath, content: extracted.content });
+            allFileNames.push(fullPath);
           });
           
           if (relevantFiles.length === 0) {
@@ -94,18 +97,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload, setFileNam
             reader.readAsText(file);
           });
           
-          allContents.push(content);
+          allFiles.push({ fileName: file.name, content });
           allFileNames.push(file.name);
         }
       }
       
-      if (allContents.length === 0) {
+      if (allFiles.length === 0) {
         alert('No valid files found to process.');
         return;
       }
       
       setFileName(allFileNames);
-      onFileUpload(allContents);
+      onFileUpload(allFiles);
       
     } catch (err) {
       console.error("Error processing files:", err);
