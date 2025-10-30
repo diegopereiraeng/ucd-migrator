@@ -4,7 +4,7 @@ import { FileUpload } from './components/FileUpload';
 import { ProcessView } from './components/ProcessView';
 import { AiIcon } from './components/icons';
 import { ParsedData } from './types';
-import { parsers, defaultParserKey } from './services/parserService';
+import { parsers, defaultParserKey, FileInput } from './services/parserService';
 import { aiService } from './services/aiService';
 import { LLMProvider, LLM_PROVIDER_NAMES } from './services/llmProvider';
 
@@ -20,7 +20,7 @@ function App() {
     aiService.setProvider(provider);
   };
 
-  const handleFileUpload = (contents: string[]) => {
+  const handleFileUpload = (files: FileInput[]) => {
     setError('');
     const parserFunc = parsers[selectedParser]?.parse;
     if (!parserFunc) {
@@ -28,11 +28,11 @@ function App() {
       return;
     }
 
-    const data = parserFunc(contents);
+    const data = parserFunc(files);
     if (data && data.processes.length > 0) {
       setParsedData(data);
     } else {
-      setError('Invalid or empty JSON file(s). Please check the file format and ensure it contains valid processes.');
+      setError('Invalid or empty file(s). Please check the file format and ensure it contains valid processes.');
       setParsedData(null);
       setFileName('');
     }

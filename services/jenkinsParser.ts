@@ -1,21 +1,21 @@
 // services/jenkinsParser.ts
 import { JenkinsBundle, ParsedData, ParsedProcess, ParsedStep } from '../types';
+import { FileInput } from './parserService';
 
 /**
  * Parses Jenkins bundle files and converts them into ParsedData format
  * The bundle includes: Jenkinsfile, config.xml, build.xml, and groovy scripts
  */
-export const parseJenkins = (fileContents: string[]): ParsedData | null => {
+export const parseJenkins = (files: FileInput[]): ParsedData | null => {
   try {
     const bundle: JenkinsBundle = {
       groovyScripts: {},
       allFiles: []
     };
 
-    // Categorize files based on their content and names
-    fileContents.forEach((content, index) => {
-      // Try to detect file type from content
-      const fileName = extractFileName(content, index);
+    // Categorize files based on their actual filenames and content
+    files.forEach(({ fileName, content }) => {
+      // Detect file type from actual filename and content
       const fileType = detectFileType(fileName, content);
 
       bundle.allFiles.push({

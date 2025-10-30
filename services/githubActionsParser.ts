@@ -1,12 +1,13 @@
 // services/githubActionsParser.ts
 import { GitHubActionsBundle, ParsedData, ParsedProcess, ParsedStep, GitHubWorkflow, GitHubJob } from '../types';
+import { FileInput } from './parserService';
 import * as yaml from 'js-yaml';
 
 /**
  * Parses GitHub Actions workflow files and converts them into ParsedData format
  * The bundle includes: workflow YAML files, composite actions, and reusable workflows
  */
-export const parseGitHubActions = (fileContents: string[]): ParsedData | null => {
+export const parseGitHubActions = (files: FileInput[]): ParsedData | null => {
   try {
     const bundle: GitHubActionsBundle = {
       workflows: {},
@@ -15,9 +16,8 @@ export const parseGitHubActions = (fileContents: string[]): ParsedData | null =>
       allFiles: []
     };
 
-    // Categorize files based on their content and names
-    fileContents.forEach((content, index) => {
-      const fileName = extractFileName(content, index);
+    // Categorize files based on their actual filenames and content
+    files.forEach(({ fileName, content }) => {
       const fileType = detectFileType(fileName, content);
 
       bundle.allFiles.push({

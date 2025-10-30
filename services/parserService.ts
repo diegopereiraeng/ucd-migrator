@@ -4,7 +4,12 @@ import { parseJenkins } from './jenkinsParser';
 import { parseGitHubActions } from './githubActionsParser';
 import { ParsedData } from '../types';
 
-export type ParserFunction = (jsonContents: string[]) => ParsedData | null;
+export interface FileInput {
+  fileName: string;
+  content: string;
+}
+
+export type ParserFunction = (files: FileInput[]) => ParsedData | null;
 
 export const parsers: { [key: string]: { name: string; parse: ParserFunction } } = {
   ucd: {
