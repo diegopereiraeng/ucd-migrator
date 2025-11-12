@@ -17,6 +17,8 @@ export const parseJenkins = (files: FileInput[]): ParsedData | null => {
     files.forEach(({ fileName, content }) => {
       // Detect file type from actual filename and content
       const fileType = detectFileType(fileName, content);
+      
+      console.log(`Processing file: ${fileName}, Detected type: ${fileType}`); // Debug log
 
       bundle.allFiles.push({
         fileName,
@@ -37,11 +39,21 @@ export const parseJenkins = (files: FileInput[]): ParsedData | null => {
         case 'groovy':
           bundle.groovyScripts[fileName] = content;
           break;
+        case 'xml':
+          // CAMBIO CLAVE: Si es un XML genérico y no parece un script de build,
+          // asumimos que es la configuración del Job para evitar que el parser retorne null.
+          if (!content.includes('<project name=') && !content.includes('build.xml')) {
+             bundle.configXml = content;
+          } else {
+             bundle.buildXml = content;
+          }
+          break;
       }
     });
 
+    // Validación final: Si no hemos asignado nada, el parser falla.
     if (!bundle.jenkinsfile && !bundle.configXml && Object.keys(bundle.groovyScripts).length === 0) {
-      console.error('No valid Jenkins files found in bundle');
+      console.error('No valid Jenkins files found in bundle. Files received:', files.map(f => f.fileName));
       return null;
     }
 
@@ -62,13 +74,12 @@ export const parseJenkins = (files: FileInput[]): ParsedData | null => {
  * Extracts filename from content or generates one
  */
 const extractFileName = (content: string, index: number): string => {
-  // Try to find filename in first comment or metadata
   const firstLines = content.split('\n').slice(0, 5).join('\n');
   
   if (firstLines.toLowerCase().includes('jenkinsfile')) {
     return 'Jenkinsfile';
   }
-  if (firstLines.includes('config.xml') || content.includes('<project>')) {
+  if (firstLines.includes('config.xml') || content.includes('<project>') || content.includes('<flow-definition>')) {
     return 'config.xml';
   }
   if (firstLines.includes('build.xml') || content.includes('<project name=')) {
@@ -90,6 +101,12 @@ const detectFileType = (fileName: string, content: string): string => {
   if (lowerFileName === 'jenkinsfile' || lowerFileName.includes('jenkinsfile')) {
     return 'jenkinsfile';
   }
+  
+  // Detección explícita de flow-definition (Pipeline Jobs)
+  if (content.includes('<flow-definition>')) {
+    return 'config.xml';
+  }
+
   if (lowerFileName === 'config.xml') {
     return 'config.xml';
   }
@@ -99,7 +116,9 @@ const detectFileType = (fileName: string, content: string): string => {
   if (lowerFileName.endsWith('.groovy') || content.includes('def ') || content.includes('@NonCPS')) {
     return 'groovy';
   }
-  if (content.trim().startsWith('<?xml') || content.includes('<project>')) {
+  
+  // Detección genérica de XML
+  if (content.trim().startsWith('<?xml') || content.includes('<project>') || content.endsWith('</flow-definition>')) {
     return 'xml';
   }
   
@@ -113,31 +132,26 @@ const parseJenkinsBundle = (bundle: JenkinsBundle): ParsedProcess => {
   const mainFlow: ParsedStep[] = [];
   const failureFlow: ParsedStep[] = [];
 
-  // Add Jenkinsfile analysis as main steps
   if (bundle.jenkinsfile) {
     const jenkinsfileSteps = parseJenkinsfile(bundle.jenkinsfile);
     mainFlow.push(...jenkinsfileSteps);
   }
 
-  // Add config.xml analysis
   if (bundle.configXml) {
     const configStep = parseConfigXml(bundle.configXml);
     mainFlow.push(configStep);
   }
 
-  // Add build.xml analysis
   if (bundle.buildXml) {
     const buildStep = parseBuildXml(bundle.buildXml);
     mainFlow.push(buildStep);
   }
 
-  // Add groovy scripts analysis
   Object.entries(bundle.groovyScripts).forEach(([fileName, content]) => {
     const groovyStep = parseGroovyScript(fileName, content);
     mainFlow.push(groovyStep);
   });
 
-  // Add a summary step with all file information
   const summaryStep: ParsedStep = {
     name: 'Bundle Summary',
     id: 'bundle_summary',
@@ -168,8 +182,6 @@ const parseJenkinsBundle = (bundle: JenkinsBundle): ParsedProcess => {
  */
 const parseJenkinsfile = (content: string): ParsedStep[] => {
   const steps: ParsedStep[] = [];
-  
-  // Extract pipeline structure
   const stages = extractStages(content);
   const hasDeclarativePipeline = content.includes('pipeline {');
   const hasScriptedPipeline = content.includes('node(') || content.includes('node {');
@@ -184,7 +196,6 @@ const parseJenkinsfile = (content: string): ParsedStep[] => {
       stagesFound: stages.length,
       stageNames: stages
     },
-    // Keep Jenkinsfile content as it's the main pipeline definition needed for migration
     scriptBody: content,
     incomingPaths: []
   };
@@ -193,18 +204,13 @@ const parseJenkinsfile = (content: string): ParsedStep[] => {
   return steps;
 };
 
-/**
- * Extracts stage names from Jenkinsfile
- */
 const extractStages = (content: string): string[] => {
   const stages: string[] = [];
   const stageRegex = /stage\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
   let match;
-  
   while ((match = stageRegex.exec(content)) !== null) {
     stages.push(match[1]);
   }
-  
   return stages;
 };
 
@@ -212,30 +218,28 @@ const extractStages = (content: string): string[] => {
  * Parses config.xml content
  */
 const parseConfigXml = (content: string): ParsedStep => {
+  const isPipeline = content.includes('<flow-definition>');
+  
   return {
     name: 'Job Configuration (config.xml)',
     id: 'config_xml',
     type: 'plugin',
-    details: 'Jenkins Job Configuration XML',
+    details: isPipeline ? 'Jenkins Pipeline Job Configuration' : 'Jenkins Job Configuration XML',
     properties: {
+      jobType: isPipeline ? 'Pipeline' : 'Freestyle/Other',
       hasBuilders: content.includes('<builders>'),
       hasPublishers: content.includes('<publishers>'),
       hasTriggers: content.includes('<triggers>'),
       hasScm: content.includes('<scm'),
-      contentLength: content.length  // Track size without storing full content
+      hasParameters: content.includes('ParametersDefinitionProperty'),
+      contentLength: content.length
     },
-    // Remove scriptBody to reduce token usage - XML config is often very large
-    // Full content is available in bundle summary if needed
     incomingPaths: []
   };
 };
 
-/**
- * Parses build.xml content
- */
 const parseBuildXml = (content: string): ParsedStep => {
   const targets = extractAntTargets(content);
-  
   return {
     name: 'Build Configuration (build.xml)',
     id: 'build_xml',
@@ -244,32 +248,22 @@ const parseBuildXml = (content: string): ParsedStep => {
     properties: {
       targetsFound: targets.length,
       targetNames: targets,
-      contentLength: content.length  // Track size without storing full content
+      contentLength: content.length
     },
-    // Remove scriptBody to reduce token usage - XML is often very large
-    // Full content is available in bundle summary if needed
     incomingPaths: []
   };
 };
 
-/**
- * Extracts Ant target names from build.xml
- */
 const extractAntTargets = (content: string): string[] => {
   const targets: string[] = [];
   const targetRegex = /<target\s+name="([^"]+)"/g;
   let match;
-  
   while ((match = targetRegex.exec(content)) !== null) {
     targets.push(match[1]);
   }
-  
   return targets;
 };
 
-/**
- * Parses groovy script content
- */
 const parseGroovyScript = (fileName: string, content: string): ParsedStep => {
   const functions = extractGroovyFunctions(content);
   const hasSharedLibrary = content.includes('@Library') || content.includes('import ');
@@ -287,24 +281,17 @@ const parseGroovyScript = (fileName: string, content: string): ParsedStep => {
       hasNonCPS: content.includes('@NonCPS'),
       contentLength: content.length
     },
-    // Keep Groovy scripts as they contain actual logic needed for migration
-    // These are typically smaller than XML files and contain executable code
     scriptBody: content,
     incomingPaths: []
   };
 };
 
-/**
- * Extracts function names from groovy script
- */
 const extractGroovyFunctions = (content: string): string[] => {
   const functions: string[] = [];
   const functionRegex = /def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g;
   let match;
-  
   while ((match = functionRegex.exec(content)) !== null) {
     functions.push(match[1]);
   }
-  
   return functions;
 };

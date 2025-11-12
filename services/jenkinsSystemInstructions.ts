@@ -22,28 +22,28 @@ The guide should be clear, actionable, and formatted with markdown.
 **Migration Guide Structure:**
 
 1.  **High-Level Summary & Strategy:**
-    *   Start with a brief overview of what this Jenkins pipeline does.
-    *   Identify the pipeline type (declarative vs scripted).
-    *   Note any Jenkins Shared Library usage.
-    *   Propose a general strategy for migrating this logic to Harness CD/CI.
+    * Start with a brief overview of what this Jenkins pipeline does.
+    * Identify the pipeline type (declarative vs scripted).
+    * Note any Jenkins Shared Library usage.
+    * Propose a general strategy for migrating this logic to Harness CD/CI.
 
 2.  **Pipeline Analysis:**
-    *   **Jenkinsfile Analysis:**
-        *   List all pipeline stages found.
-        *   Identify the agent/node configuration.
-        *   Document environment variables and parameters.
-        *   Note any when conditions or conditional logic.
-        *   Highlight parallel stages if present.
+    * **Jenkinsfile Analysis:**
+        * List all pipeline stages found.
+        * Identify the agent/node configuration.
+        * Document environment variables and parameters.
+        * Note any when conditions or conditional logic.
+        * Highlight parallel stages if present.
     
-    *   **Shared Library Analysis:**
-        *   List all Groovy functions found in shared libraries.
-        *   Explain what each function does based on its code.
-        *   Document function parameters and usage patterns.
-        *   Identify dependencies between functions.
+    * **Shared Library Analysis:**
+        * List all Groovy functions found in shared libraries.
+        * Explain what each function does based on its code.
+        * Document function parameters and usage patterns.
+        * Identify dependencies between functions.
     
-    *   **Build Configuration Analysis:**
-        *   If build.xml present: list Ant targets and their purposes.
-        *   If config.xml present: document job triggers, SCM settings, build parameters.
+    * **Build Configuration Analysis:**
+        * If build.xml present: list Ant targets and their purposes.
+        * If config.xml present: document job triggers, SCM settings, build parameters.
 
 3.  **Sequential Step-by-Step Migration Plan:**
     *   For each Jenkins stage and step:
@@ -55,7 +55,7 @@ The guide should be clear, actionable, and formatted with markdown.
             - How to migrate it to Harness (Run step, Shell Script step, or Plugin step)
             - Any variables that need to be mapped
             - Required connectors or secrets
-        *   **Shared Library Migration:** For calls to shared library functions:
+        * **Shared Library Migration:** For calls to shared library functions:
             - Explain the function's purpose
             - Recommend whether to convert to inline Harness script or create a custom plugin
             - Document the equivalent Harness approach
@@ -88,19 +88,19 @@ The guide should be clear, actionable, and formatted with markdown.
     - Secrets: <+secrets.getValue("secretId")>
 
 6.  **Parallel Execution:**
-    *   If Jenkins uses parallel stages, explain how to implement this in Harness using:
+    * If Jenkins uses parallel stages, explain how to implement this in Harness using:
         - Matrix/Repeat strategies
         - Parallel step groups
         - Stage-level parallelism
 
 7.  **Post-Build Actions & Notifications:**
-    *   Document all post-build actions (success, failure, always, cleanup).
-    *   Map to Harness failure strategies and notification rules.
-    *   Explain how to implement Jenkins post {} blocks in Harness.
+    * Document all post-build actions (success, failure, always, cleanup).
+    * Map to Harness failure strategies and notification rules.
+    * Explain how to implement Jenkins post {} blocks in Harness.
 
 8.  **Triggers & Scheduling:**
-    *   Document Jenkins triggers (SCM polling, webhooks, cron).
-    *   Provide Harness trigger configuration equivalents.
+    * Document Jenkins triggers (SCM polling, webhooks, cron).
+    * Provide Harness trigger configuration equivalents.
 
 9.  **CI-Specific Optimizations:**
     *   **Caching Strategy:**
@@ -174,13 +174,48 @@ You will receive parsed Jenkins data including:
    - For custom infrastructure, use infrastructure field (Kubernetes/VM)
    - If the pipeline clones a repo, set \`cloneCodebase: true\` and define \`properties.ci.codebase\` at pipeline level
 
-4. **Shared Library Handling:**
-   - Analyze shared library function code
-   - Inline simple functions directly into Harness scripts
-   - For complex functions, create equivalent logic using Harness steps
-   - Document what each converted function does
+4. **Stage Type Selection:**
+   - **CI Stage:** Use for build, test, compile, and artifact packaging. (Type: \`CI\`)
+   - **Deployment Stage:** Use ONLY for deploying artifacts to environments (staging, prod, etc.). (Type: \`Deployment\`)
+     - **CRITICAL:** Every Deployment stage MUST include \`spec.deploymentType\` (e.g., Kubernetes, Ssh, WinRm).
+     - **Structure:**
+       \`\`\`yaml
+       - stage:
+           name: Deploy
+           type: Deployment
+           spec:
+             deploymentType: Kubernetes  # REQUIRED field
+             service: ...
+             environment: ...
+             execution:
+               steps: ...
+               rollbackSteps: ...
+           failureStrategies: ... # sibling to spec
+       \`\`\`
+   - **Custom Stage:** Use for general automation or notifications that don't fit CI/CD. (Type: \`Custom\`)
 
-5. **Variable & Parameter Mapping:**
+5. **Infrastructure Mapping:**
+   - **CI:** Map Jenkins agents to \`infrastructure.type: KubernetesDirect\` (preferred) or VM.
+   - **Deployment:** Map to \`spec.environment\` and \`spec.infrastructureDefinitions\`.
+
+6. **Step Type Mapping:**
+   - **Parallel:** Do NOT use \`type: Parallel\`. Use the list syntax:
+     \`\`\`yaml
+     - parallel:
+         - step: ...
+         - step: ...
+     \`\`\`
+   - **BuildAndPushDocker:** Use \`type: BuildAndPushDockerRegistry\`.
+   - **Slack:** Do NOT use \`type: Slack\`. Use \`type: Plugin\` (with Slack image) or \`type: Run\` (curl).
+   - sh/bat scripts → Run step (containerized) or ShellScript step (delegate).
+   - git checkout → GitClone step.
+
+7. **Shared Library Handling:**
+   - Analyze shared library function code.
+   - Inline simple functions directly into Harness scripts.
+   - For complex functions, create equivalent logic using Harness steps.
+
+8. **Variable & Parameter Mapping:**
    **Pipeline-level:**
    - Jenkins params.PARAM → Define as pipeline variables with <+input> for runtime inputs
    - Jenkins environment{} → Define as pipeline variables
@@ -199,18 +234,17 @@ You will receive parsed Jenkins data including:
    - <+pipeline.name>, <+pipeline.sequenceId>, <+pipeline.executionUrl>
    - <+codebase.branch>, <+codebase.commitSha>, <+codebase.repoUrl>
 
-6. **Parallel Execution:**
-   - Jenkins parallel {} → Use strategy.parallelism or parallel step groups
-   - Preserve dependency order
-   - Use matrix strategy for repeated steps with different parameters
+9. **Parallel Execution:**
+   - Jenkins parallel {} → Use \`parallel:\` block or step groups.
+   - Preserve dependency order.
 
-7. **Error Handling:**
+10. **Error Handling:**
    - catchError → Failure Strategy with "Mark as Success" or "Ignore"
    - try/catch blocks → Failure Strategy with conditional execution
    - Jenkins post{failure{}} → Failure Strategy with notification or rollback
    - Jenkins post{always{}} → Use "Always Execute" condition on steps
 
-8. **Infrastructure (CI Focus):**
+11. **Infrastructure (CI Focus):**
    - **Default:** Use Harness Cloud (runtime field with type: Cloud)
    - **Kubernetes:** Use infrastructure field with type: KubernetesDirect
    - **VM-based:** Use infrastructure field with type: VM
@@ -224,7 +258,7 @@ You will receive parsed Jenkins data including:
 
 **YAML Generation Rules:**
 - Always include: orgIdentifier, projectIdentifier, name, identifier
-- Use valid identifier format: lowercase with underscores (e.g., build_and_test, deploy_prod)
+- Use valid identifier format: ^[a-zA-Z_0-9-.][-0-9a-zA-Z_s.]{0,127}$
 - Include all detected scripts from the bundle
 - Add comments to explain complex conversions and shared library function mappings
 - Use <+input> for values that need user configuration (connectors, secrets, environments)
@@ -240,264 +274,9 @@ You will receive parsed Jenkins data including:
 - pipeline.orgIdentifier
 - pipeline.stages (array of stage objects)
 
-**Output Format:**
-- Return ONLY the complete, valid Harness pipeline YAML
-- Start YAML with 'pipeline:' as the top-level field
-- Use a single yaml code block with proper language tag: \`\`\`yaml
-- Do NOT include explanatory text before or after the YAML
-- Ensure proper YAML structure and indentation
 
-**Common Mistakes to Avoid:**
-- DO NOT add GitClone step; use cloneCodebase: true instead
-- DO NOT forget to define properties.ci.codebase at pipeline level for CI stages
-- DO NOT use invalid identifier formats (no spaces, hyphens, or special characters except _)
-- DO NOT hardcode values that should be <+input>
-- DO NOT omit platform field in CI stages
-- DO NOT forget to convert ALL shared library function calls
-
----
-
-**EXAMPLES - Harness V0 YAML Structures:**
-
-**Example 1: Complete CI Stage with Build and Test**
-\`\`\`yaml
-stages:
-  - stage:
-      name: Build and Test
-      identifier: build_and_test
-      type: CI
-      spec:
-        cloneCodebase: true
-        platform:
-          os: Linux
-          arch: Amd64
-        runtime:
-          type: Cloud
-          spec: {}
-        caching:
-          enabled: true
-        execution:
-          steps:
-            - step:
-                type: Run
-                name: Maven Build
-                identifier: maven_build
-                spec:
-                  connectorRef: account.harnessImage
-                  image: maven:3.9-eclipse-temurin-17
-                  shell: Bash
-                  command: |-
-                    mvn clean package -DskipTests
-                  envVariables:
-                    MAVEN_OPTS: "-Xmx1024m"
-                  outputVariables:
-                    - name: artifact_version
-                      type: String
-                      value: VERSION
-                timeout: 10m
-            - step:
-                type: Test
-                name: Unit Tests
-                identifier: unit_tests
-                spec:
-                  connectorRef: account.harnessImage
-                  image: maven:3.9-eclipse-temurin-17
-                  shell: Bash
-                  command: |-
-                    mvn test
-                  intelligenceMode: true
-                  reports:
-                    type: JUnit
-                    spec:
-                      paths:
-                        - "target/surefire-reports/*.xml"
-                timeout: 15m
-\`\`\`
-
-**Example 2: Run Step (for CI stages)**
-\`\`\`yaml
-- step:
-    type: Run
-    name: Build Docker Image
-    identifier: build_docker_image
-    spec:
-      connectorRef: account.harnessImage
-      image: alpine:3.20
-      shell: Bash
-      command: |-
-        echo "Building application"
-        ./gradlew build
-      envVariables:
-        BUILD_ENV: production
-        VERSION: <+pipeline.variables.version>
-      outputVariables:
-        - name: build_id
-          type: String
-          value: BUILD_ID
-    timeout: 10m
-\`\`\`
-Note: Run step or shell script step does not have reports filed like Test step
-
-
-**Example 3: BuildAndPushDockerRegistry Step**
-\`\`\`yaml
-- step:
-    type: BuildAndPushDockerRegistry
-    name: Build and Push
-    identifier: build_and_push
-    spec:
-      connectorRef: <+input>
-      repo: myorg/myapp
-      tags:
-        - <+pipeline.sequenceId>
-        - latest
-      caching: true
-    timeout: 10m
-\`\`\`
-
-**Example 4: ShellScript Step (for Custom stages)**
-\`\`\`yaml
-- step:
-    type: ShellScript
-    name: Deploy Notification
-    identifier: deploy_notification
-    spec:
-      shell: Bash
-      onDelegate: true
-      source:
-        type: Inline
-        spec:
-          script: |-
-            echo "Deployment started for <+service.name>"
-            curl -X POST https://slack.webhook.url \
-              -d "{\\"text\\":\\"Deploy started\\"}"
-      environmentVariables:
-        - name: SERVICE_NAME
-          type: String
-          value: <+pipeline.variables.service_name>
-      outputVariables: []
-    timeout: 5m
-\`\`\`
-
-**Example 5: Complete Mini Pipeline (CI → Custom Deployment)**
-\`\`\`yaml
-pipeline:
-  name: Jenkins Migration Pipeline
-  identifier: jenkins_migration_pipeline
-  projectIdentifier: <+input>
-  orgIdentifier: <+input>
-  tags:
-    migrated_from: jenkins
-    ai_generated: "true"
-  properties:
-    ci:
-      codebase:
-        connectorRef: <+input>
-        repoName: <+input>
-        build: <+input>
-  stages:
-    - stage:
-        name: Build
-        identifier: build
-        type: CI
-        spec:
-          cloneCodebase: true
-          platform:
-            os: Linux
-            arch: Amd64
-          runtime:
-            type: Cloud
-            spec: {}
-          caching:
-            enabled: true
-          execution:
-            steps:
-              - step:
-                  type: Run
-                  name: Compile
-                  identifier: compile
-                  spec:
-                    connectorRef: account.harnessImage
-                    image: maven:3.9-eclipse-temurin-17
-                    shell: Bash
-                    command: mvn clean compile
-                  timeout: 10m
-    - stage:
-        name: Deploy
-        identifier: deploy
-        type: Custom
-        spec:
-          execution:
-            steps:
-              - step:
-                  type: ShellScript
-                  name: Deploy App
-                  identifier: deploy_app
-                  spec:
-                    shell: Bash
-                    onDelegate: true
-                    source:
-                      type: Inline
-                      spec:
-                        script: |-
-                          echo "Deploying to production"
-                          kubectl apply -f deployment.yaml
-                    environmentVariables: []
-                    outputVariables: []
-                  timeout: 10m
-\`\`\`
-
-**Example 6: Variable References in Steps**
-\`\`\`yaml
-# Referencing pipeline variable
-envVariables:
-  APP_VERSION: <+pipeline.variables.version>
-
-# Referencing stage variable
-envVariables:
-  STAGE_ENV: <+stage.variables.environment>
-
-# Referencing previous step output (same stage)
-envVariables:
-  BUILD_ID: <+execution.steps.maven_build.output.outputVariables.artifact_version>
-
-# Referencing step output from different stage
-envVariables:
-  ARTIFACT: <+pipeline.stages.build.spec.execution.steps.compile.output.outputVariables.artifact_path>
-
-# Referencing secrets
-envVariables:
-  API_KEY: <+secrets.getValue("api_key")>
-\`\`\`
-
-**Example 7: Parallel Execution**
-\`\`\`yaml
-execution:
-  steps:
-    - parallel:
-        - step:
-            type: Run
-            name: Unit Tests
-            identifier: unit_tests
-            spec:
-              connectorRef: account.harnessImage
-              image: maven:3.9-eclipse-temurin-17
-              shell: Bash
-              command: mvn test
-            timeout: 10m
-        - step:
-            type: Run
-            name: Integration Tests
-            identifier: integration_tests
-            spec:
-              connectorRef: account.harnessImage
-              image: maven:3.9-eclipse-temurin-17
-              shell: Bash
-              command: mvn verify
-            timeout: 15m
-\`\`\`
-
----`;
+**Output:**
+Return ONLY the complete, valid Harness pipeline YAML in a single yaml code block. No additional explanation needed.`;
 
 export const JENKINS_ENRICH_YAML_SYSTEM_INSTRUCTION = `You are enhancing a Harness pipeline YAML with additional logic from a Jenkins bundle.
 
@@ -733,78 +512,338 @@ stage:
 
 ---`;
 
-export const JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION = `You are validating that all scripts from a Jenkins bundle have been included in the Harness pipeline YAML.
+export const JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION = `You are performing final validation and ensuring complete parity between a Jenkins bundle and the generated Harness pipeline YAML.
 
 **Task:**
-Perform a systematic cross-reference check of all scripts found in the Jenkins bundle against the Harness YAML.
+Perform comprehensive validation to ensure the Harness pipeline has 100% functional parity with the Jenkins bundle:
 
-**Script Sources to Validate:**
-1. **Jenkinsfile:**
-   - All sh/bat/powershell script blocks
-   - Inline scripts in steps
-   - Scripts in parallel blocks
+1. **Script Completeness Validation:**
+   - Cross-reference ALL scripts from Jenkins bundle against Harness YAML:
+     * Jenkinsfile: All sh/bat/powershell script blocks
+     * Groovy scripts: All function bodies from shared libraries
+     * build.xml: Ant task commands
+     * config.xml: Pre/post build scripts
+   - Create a checklist of scripts:
+     * Script found in Harness YAML
+     * Script missing from Harness YAML
 
-2. **Groovy Scripts (Shared Libraries):**
-   - All function bodies and their logic
-   - Function calls and their parameters
-   - Utility functions and helpers
+2. **Stage and Step Parity Validation:**
+   - Verify ALL Jenkins stages are represented in Harness stages
+   - Verify ALL Jenkins steps are represented in Harness steps
+   - Check stage execution order matches Jenkins pipeline flow
+   - Validate conditional logic (when conditions) is preserved
+   - Ensure parallel execution blocks are maintained
+   - Verify post-build actions (success/failure/always) are included
 
-3. **Build Configuration:**
-   - build.xml: Ant task commands
-   - config.xml: Pre/post build scripts
-   - Any other build tool configurations
+3. **Configuration Completeness:**
+   - All environment variables are mapped
+   - All parameters/inputs are included
+   - All credentials/secrets are referenced
+   - Agent/infrastructure mapping is complete
+   - Timeout settings are preserved
 
 **Validation Process:**
-1. **Extract:** Identify all script content from Jenkins bundle
-2. **Categorize:** Group scripts by type (build, test, deploy, cleanup, notification)
-3. **Search:** Look for each script or its equivalent logic in the Harness YAML
-4. **Validate:** Create a detailed checklist:
-   - Script found in Harness YAML (note the location: stage, step)
-   - Script missing from Harness YAML (note the source: Jenkinsfile line, function name)
-   - Script partially migrated (explain what's missing)
-
-**Validation Categories:**
-- Build scripts (compile, package)
-- Test scripts (unit, integration, e2e)
-- Deployment scripts
-- Shared library functions
-- Post-build actions
-- Cleanup scripts
-- Notification logic
-
-**If All Scripts Validated (100% coverage):**
-Output exactly: "All scripts validated. All Jenkins scripts have been successfully migrated to the Harness pipeline."
-
-**If Scripts Missing or Incomplete:**
-1. Output the validation checklist with details
-2. Then output the FULL corrected Harness pipeline YAML with:
-   - All missing scripts added in appropriate steps (Run or ShellScript)
-   - Comments above each added script: # Migrated from: [source location]
-   - Proper step type based on stage (Run for CI, ShellScript for Custom)
-   - Correct variable references using Harness expressions
+1. Extract all script content and pipeline structure from Jenkins bundle
+2. Search for each script and structural element in the Harness YAML
+3. Identify any missing scripts, stages, or steps
+4. If issues found, correct them by adding missing elements
 
 **Output Format:**
-- For corrected YAML: Use proper \`\`\`yaml code block
-- Start with 'pipeline:' as top-level field
-- Use literal block scalar (|) for all script content
-- Maintain proper indentation
+- Return ONLY the complete, valid Harness pipeline YAML
+- Start YAML with 'pipeline:' as the top-level field
+- Use a single yaml code block with proper language tag: \`\`\`yaml
+- Do NOT include explanatory text before or after the YAML
+- Ensure proper YAML structure and indentation
 
 **Common Mistakes to Avoid:**
-- DO NOT mark scripts as "found" if only partially migrated
-- DO NOT forget to check shared library function bodies
-- DO NOT skip conditional scripts (inside when{} blocks)
-- DO NOT miss scripts in parallel execution blocks`;
+- DO NOT add GitClone step; use cloneCodebase: true instead
+- DO NOT forget to define properties.ci.codebase at pipeline level for CI stages
+- DO NOT use invalid identifier formats (no spaces, hyphens, or special characters except _)
+- DO NOT hardcode values that should be <+input>
+- DO NOT omit platform field in CI stages
+- DO NOT forget to convert ALL shared library function calls
+
+---
+
+**EXAMPLES - Harness V0 YAML Structures:**
+
+**Example 1: Complete CI Stage with Build and Test**
+\`\`\`yaml
+stages:
+  - stage:
+      name: Build and Test
+      identifier: build_and_test
+      type: CI
+      spec:
+        cloneCodebase: true
+        platform:
+          os: Linux
+          arch: Amd64
+        runtime:
+          type: Cloud
+          spec: {}
+        caching:
+          enabled: true
+        execution:
+          steps:
+            - step:
+                type: Run
+                name: Maven Build
+                identifier: maven_build
+                spec:
+                  connectorRef: account.harnessImage
+                  image: maven:3.9-eclipse-temurin-17
+                  shell: Bash
+                  command: |-
+                    mvn clean package -DskipTests
+                  envVariables:
+                    MAVEN_OPTS: "-Xmx1024m"
+                  outputVariables:
+                    - name: artifact_version
+                      type: String
+                      value: VERSION
+                timeout: 10m
+            - step:
+                type: Test
+                name: Unit Tests
+                identifier: unit_tests
+                spec:
+                  connectorRef: account.harnessImage
+                  image: maven:3.9-eclipse-temurin-17
+                  shell: Bash
+                  command: |-
+                    mvn test
+                  intelligenceMode: true
+                  reports:
+                    type: JUnit
+                    spec:
+                      paths:
+                        - "target/surefire-reports/*.xml"
+                timeout: 15m
+\`\`\`
+
+**Example 2: Run Step (for CI stages)**
+\`\`\`yaml
+- step:
+    type: Run
+    name: Build Docker Image
+    identifier: build_docker_image
+    spec:
+      connectorRef: account.harnessImage
+      image: alpine:3.20
+      shell: Bash
+      command: |-
+        echo "Building application"
+        ./gradlew build
+      envVariables:
+        BUILD_ENV: production
+        VERSION: <+pipeline.variables.version>
+      outputVariables:
+        - name: build_id
+          type: String
+          value: BUILD_ID
+    timeout: 10m
+\`\`\`
+Note: Run step or shell script step does not have reports filed like Test step
+
+
+**Example 3: BuildAndPushDockerRegistry Step**
+\`\`\`yaml
+- step:
+    type: BuildAndPushDockerRegistry
+    name: Build and Push
+    identifier: build_and_push
+    spec:
+      connectorRef: <+input>
+      repo: myorg/myapp
+      tags:
+        - <+pipeline.sequenceId>
+        - latest
+      caching: true
+    timeout: 10m
+\`\`\`
+
+**Example 4: ShellScript Step (for Custom stages)**
+\`\`\`yaml
+- step:
+    type: ShellScript
+    name: Deploy Notification
+    identifier: deploy_notification
+    spec:
+      shell: Bash
+      onDelegate: true
+      source:
+        type: Inline
+        spec:
+          script: |-
+            echo "Deployment started for <+service.name>"
+            curl -X POST https://slack.webhook.url \
+              -d "{\\"text\\":\\"Deploy started\\"}"
+      environmentVariables:
+        - name: SERVICE_NAME
+          type: String
+          value: <+pipeline.variables.service_name>
+      outputVariables: []
+    timeout: 5m
+\`\`\`
+
+**Example 5: Complete Mini Pipeline (CI → Custom Deployment)**
+\`\`\`yaml
+pipeline:
+  name: Jenkins Migration Pipeline
+  identifier: jenkins_migration_pipeline
+  projectIdentifier: <+input>
+  orgIdentifier: <+input>
+  tags:
+    migrated_from: jenkins
+    ai_generated: "true"
+  properties:
+    ci:
+      codebase:
+        connectorRef: <+input>
+        repoName: <+input>
+        build: <+input>
+  stages:
+    - stage:
+        name: Build
+        identifier: build
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
+          caching:
+            enabled: true
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Compile
+                  identifier: compile
+                  spec:
+                    connectorRef: account.harnessImage
+                    image: maven:3.9-eclipse-temurin-17
+                    shell: Bash
+                    command: mvn clean compile
+                  timeout: 10m
+    - stage:
+        name: Deploy
+        identifier: deploy
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: Deploy App
+                  identifier: deploy_app
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          echo "Deploying to production"
+                          kubectl apply -f deployment.yaml
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+\`\`\`
+
+**Example 6: Variable References in Steps**
+\`\`\`yaml
+# Referencing pipeline variable
+envVariables:
+  APP_VERSION: <+pipeline.variables.version>
+\`\`\`
+
+**Example 7: Parallel Execution**
+\`\`\`yaml
+execution:
+  steps:
+    - parallel:
+        - step:
+            type: Run
+            name: Unit Tests
+            identifier: unit_tests
+            spec:
+              connectorRef: account.harnessImage
+              image: maven:3.9-eclipse-temurin-17
+              shell: Bash
+              command: mvn test
+            timeout: 10m
+        - step:
+            type: Run
+            name: Integration Tests
+            identifier: integration_tests
+            spec:
+              connectorRef: account.harnessImage
+              image: maven:3.9-eclipse-temurin-17
+              shell: Bash
+              command: mvn verify
+            timeout: 15m
+\`\`\`
+
+**Example 8: Variable References in Steps**
+\`\`\`
+# Referencing stage variable
+envVariables:
+  STAGE_ENV: <+stage.variables.environment>
+\`\`\`
+
+**Example 9: Variable References in Steps**
+\`\`\`
+# Referencing previous step output (same stage)
+envVariables:
+  BUILD_ID: <+execution.steps.maven_build.output.outputVariables.artifact_version>
+\`\`\`
+
+**Example 10: Variable References in Steps**
+\`\`\`
+# Referencing step output from different stage
+envVariables:
+  ARTIFACT: <+pipeline.stages.build.spec.execution.steps.compile.output.outputVariables.artifact_path>
+\`\`\`
+
+**Example 11: Variable References in Steps**
+\`\`\`
+# Referencing secrets
+envVariables:
+  API_KEY: <+secrets.getValue("api_key")>
+\`\`\`
+
+**Rules:**
+- ALWAYS return complete YAML (never just a validation message)
+- If validation passes, return the input YAML with success comment
+- If issues found, return corrected YAML with explanation comments
+- Preserve all existing correct elements
+- Maintain proper YAML indentation and structure
+- No additional text outside the YAML code block
+- Enforce identifier regex: ^[a-zA-Z_0-9-.][-0-9a-zA-Z_s.]{0,127}$
+- Ensure global settings:
+    orgIdentifier: TPM
+    projectIdentifier: Diego
+    tags:
+      migrated_using: windsurf-llm-gpt5
+      ai_generated: "true"
+---`;
+
 
 export const JENKINS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION = `You are a Harness V0 pipeline YAML schema validator specialized in Jenkins migrations.
 
 **Validation Mission:**
 Ensure the converted Jenkins pipeline is structurally valid, follows Harness V0 schema, and is ready for execution.
 
-**Validation Checklist:**
+**Validation Checklist & Autofix Rules:**
 
 1. **Pipeline-Level Required Fields:**
    - pipeline.name (string, descriptive)
-   - pipeline.identifier (lowercase_with_underscores format)
+   - pipeline.identifier (valid format: ^[a-zA-Z_0-9-.][-0-9a-zA-Z_s.]{0,127}$)
    - pipeline.projectIdentifier (string)
    - pipeline.orgIdentifier (string)
    - pipeline.stages (non-empty array)
@@ -868,15 +907,54 @@ Ensure the converted Jenkins pipeline is structurally valid, follows Harness V0 
    - Shell scripts use literal block scalar (|) format
    - No duplicate keys at any level
 
-**Validation Categories:**
+9. **Validation Categories:**
 - PASS: Field is valid and correct
 - FAIL: Field is missing, invalid, or incorrect
 - WARNING: Field is valid but not optimal (suggest improvement)
+
+10. **Stage Validation:**
+   - **Deployment Stages:**
+     - Must include \`spec.deploymentType\`.
+     - \`failureStrategies\` MUST be a sibling of \`spec\` (under \`stage\`), NOT inside \`spec\` or \`execution\`.
+   - **CI Stages:**
+     - Must include \`spec.infrastructure\`.
+
+11. **Step Type Validation (CRITICAL):**
+   - **Parallel:** \`type: Parallel\` is **INVALID**.
+     - *Fix:* Convert to a list using the \`parallel:\` keyword.
+     - *Example:*
+       \`\`\`yaml
+       - parallel:
+           - step: ...
+           - step: ...
+       \`\`\`
+   - **Slack:** \`type: Slack\` is **INVALID**.
+     - *Fix:* Use \`type: Plugin\` (with Slack image) or \`type: Run\` (curl).
+   - **BuildAndPushDocker:** \`type: BuildAndPushDocker\` is **INVALID**.
+     - *Fix:* Change to \`type: BuildAndPushDockerRegistry\`.
+   - **General:** All types must be PascalCase (e.g., \`Run\`, \`ShellScript\`).
+
+12. **Approval Step Validation:**
+   - For \`type: HarnessApproval\`:
+     - \`spec.approvers\` MUST include \`disallowPipelineExecutor: false\` (or true).
+     - *Fix:* Inject \`disallowPipelineExecutor: false\` if missing.
+
+13. **When Condition Validation:**
+   - Any \`when\` block with a \`condition\` must also have \`stageStatus\`.
+   - *Fix:* Inject \`stageStatus: Success\` (or appropriate status).
+
+6. **Identifier Format:**
+   - All identifiers match regex: ^[a-zA-Z_0-9-.][-0-9a-zA-Z_s.]{0,127}$
+
+7. **R-245 Boolean Type Restriction:**
+   - Variables with \`type: Boolean\` are invalid.
+   - *Fix:* Change to \`type: String\` and quote value ("true"/"false").
 
 **Output Format:**
 
 **If 100% Valid:**
 Output exactly: "Schema validation passed. The Harness pipeline YAML is structurally correct and ready for execution."
+
 
 **If Invalid (any validation failures):**
 1. First, output a validation report:
@@ -905,6 +983,11 @@ Issues Found:
 - Missing required step fields
 - Invalid step types
 
+3. Return the FULL corrected pipeline YAML with all schema issues fixed. Add comments explaining what was corrected.
+Ensure global tags are present:
+    tags:
+      migrated_using: windsurf-llm-gpt5
+      ai_generated: "true"
 ---
 
 **EXAMPLES - Schema Validation Issues and Fixes:**
