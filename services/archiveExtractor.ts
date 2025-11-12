@@ -2,6 +2,23 @@
 import JSZip from 'jszip';
 import * as pako from 'pako';
 
+/**
+ * Checks if a file path is a Mac-specific metadata file that should be excluded
+ */
+const isMacSpecificFile = (path: string): boolean => {
+  const normalizedPath = path.replace(/\\/g, '/');
+  const fileName = normalizedPath.split('/').pop() || '';
+  
+  return (
+    // __MACOSX folders and their contents
+    normalizedPath.includes('__MACOSX') ||
+    // Mac resource fork files (start with ._)
+    fileName.startsWith('._') ||
+    // Mac folder metadata
+    fileName === '.DS_Store'
+  );
+};
+
 export interface ExtractedFile {
   path: string;
   content: string;
@@ -23,6 +40,11 @@ export const extractZipFile = async (arrayBuffer: ArrayBuffer): Promise<Extracte
     zip.forEach((relativePath, zipEntry) => {
       // Skip directories (they don't have content)
       if (zipEntry.dir) {
+        return;
+      }
+
+      // Skip Mac-specific files and folders
+      if (isMacSpecificFile(relativePath)) {
         return;
       }
 
@@ -103,18 +125,21 @@ export const extractTarFile = async (arrayBuffer: ArrayBuffer): Promise<Extracte
 
       // If it's a regular file (type '0' or '\0'), extract content
       if ((fileType === '0' || fileType === '\0' || fileType === '') && fileSize > 0) {
-        if (offset + fileSize <= tarData.length) {
+        // Skip Mac-specific files
+        if (!isMacSpecificFile(fileName)) {
+          if (offset + fileSize <= tarData.length) {
           const contentBytes = tarData.slice(offset, offset + fileSize);
           const content = new TextDecoder().decode(contentBytes);
 
           const pathParts = fileName.split('/');
           const name = pathParts[pathParts.length - 1];
 
-          extractedFiles.push({
-            path: fileName,
-            content,
-            fileName: name
-          });
+            extractedFiles.push({
+              path: fileName,
+              content,
+              fileName: name
+            });
+          }
         }
       }
 
@@ -167,6 +192,11 @@ export const filterRelevantFiles = (files: ExtractedFile[]): ExtractedFile[] => 
   return files.filter(file => {
     const path = file.path.toLowerCase();
     const name = file.fileName.toLowerCase();
+
+    // Exclude Mac-specific files (double-check in case they slipped through)
+    if (isMacSpecificFile(file.path)) {
+      return false;
+    }
 
     // Include CI/CD related files
     return (
