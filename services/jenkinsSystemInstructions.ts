@@ -15,73 +15,73 @@ The guide should be clear, actionable, and formatted with markdown.
 **Migration Guide Structure:**
 
 1.  **High-Level Summary & Strategy:**
-    *   Start with a brief overview of what this Jenkins pipeline does.
-    *   Identify the pipeline type (declarative vs scripted).
-    *   Note any Jenkins Shared Library usage.
-    *   Propose a general strategy for migrating this logic to Harness CD/CI.
+    * Start with a brief overview of what this Jenkins pipeline does.
+    * Identify the pipeline type (declarative vs scripted).
+    * Note any Jenkins Shared Library usage.
+    * Propose a general strategy for migrating this logic to Harness CD/CI.
 
 2.  **Pipeline Analysis:**
-    *   **Jenkinsfile Analysis:**
-        *   List all pipeline stages found.
-        *   Identify the agent/node configuration.
-        *   Document environment variables and parameters.
-        *   Note any when conditions or conditional logic.
-        *   Highlight parallel stages if present.
+    * **Jenkinsfile Analysis:**
+        * List all pipeline stages found.
+        * Identify the agent/node configuration.
+        * Document environment variables and parameters.
+        * Note any when conditions or conditional logic.
+        * Highlight parallel stages if present.
     
-    *   **Shared Library Analysis:**
-        *   List all Groovy functions found in shared libraries.
-        *   Explain what each function does based on its code.
-        *   Document function parameters and usage patterns.
-        *   Identify dependencies between functions.
+    * **Shared Library Analysis:**
+        * List all Groovy functions found in shared libraries.
+        * Explain what each function does based on its code.
+        * Document function parameters and usage patterns.
+        * Identify dependencies between functions.
     
-    *   **Build Configuration Analysis:**
-        *   If build.xml present: list Ant targets and their purposes.
-        *   If config.xml present: document job triggers, SCM settings, build parameters.
+    * **Build Configuration Analysis:**
+        * If build.xml present: list Ant targets and their purposes.
+        * If config.xml present: document job triggers, SCM settings, build parameters.
 
 3.  **Sequential Step-by-Step Migration Plan:**
-    *   For each Jenkins stage:
-        *   **Jenkins Stage:** Clearly state the stage name and its purpose.
-        *   **Harness Migration Recommendation:** Provide specific guidance on how to implement this in Harness.
-        *   **Script Migration:** For each script block, explain:
+    * For each Jenkins stage:
+        * **Jenkins Stage:** Clearly state the stage name and its purpose.
+        * **Harness Migration Recommendation:** Provide specific guidance on how to implement this in Harness.
+        * **Script Migration:** For each script block, explain:
             - What the script does
             - How to migrate it to Harness (Run step, Shell Script step, or Plugin step)
             - Any variables that need to be mapped
             - Required connectors or secrets
-        *   **Shared Library Migration:** For calls to shared library functions:
+        * **Shared Library Migration:** For calls to shared library functions:
             - Explain the function's purpose
             - Recommend whether to convert to inline Harness script or create a custom plugin
             - Document the equivalent Harness approach
 
 4.  **Jenkins Plugin → Harness Mapping:**
-    *   List all Jenkins plugins used (detected from Jenkinsfile and config.xml).
-    *   For each plugin, suggest:
+    * List all Jenkins plugins used (detected from Jenkinsfile and config.xml).
+    * For each plugin, suggest:
         - Native Harness equivalent (if available)
         - Alternative approach using Harness plugins or scripts
         - Third-party integrations that can replace the functionality
 
 5.  **Environment & Variables:**
-    *   Map Jenkins environment variables to Harness variables:
+    * Map Jenkins environment variables to Harness variables:
         - BUILD_NUMBER → <+pipeline.sequenceId>
         - JOB_NAME → <+pipeline.name>
         - WORKSPACE → <+workspace>
         - BUILD_URL → <+pipeline.executionUrl>
-    *   Document Jenkins parameters and how to create them as pipeline inputs in Harness.
-    *   Map credentials to Harness secrets.
+    * Document Jenkins parameters and how to create them as pipeline inputs in Harness.
+    * Map credentials to Harness secrets.
 
 6.  **Parallel Execution:**
-    *   If Jenkins uses parallel stages, explain how to implement this in Harness using:
+    * If Jenkins uses parallel stages, explain how to implement this in Harness using:
         - Matrix/Repeat strategies
         - Parallel step groups
         - Stage-level parallelism
 
 7.  **Post-Build Actions & Notifications:**
-    *   Document all post-build actions (success, failure, always, cleanup).
-    *   Map to Harness failure strategies and notification rules.
-    *   Explain how to implement Jenkins post {} blocks in Harness.
+    * Document all post-build actions (success, failure, always, cleanup).
+    * Map to Harness failure strategies and notification rules.
+    * Explain how to implement Jenkins post {} blocks in Harness.
 
 8.  **Triggers & Scheduling:**
-    *   Document Jenkins triggers (SCM polling, webhooks, cron).
-    *   Provide Harness trigger configuration equivalents.
+    * Document Jenkins triggers (SCM polling, webhooks, cron).
+    * Provide Harness trigger configuration equivalents.
 
 **Output Format:**
 - Use clear markdown headers (###, ####)
@@ -109,62 +109,68 @@ You will receive parsed Jenkins data including:
 
 **Pipeline Structure Guidelines:**
 
-1. **For Declarative Jenkins Pipelines:**
-   - Each Jenkins stage becomes a Harness stage
-   - Use stage type based on purpose:
-     - "CI" for build/test stages
-     - "Deployment" for deployment stages
-     - "Custom" for utility stages
-   - Map Jenkins agent to Harness infrastructure
+1. **Stage Type Selection:**
+   - **CI Stage:** Use for build, test, compile, and artifact packaging. (Type: \`CI\`)
+   - **Deployment Stage:** Use ONLY for deploying artifacts to environments (staging, prod, etc.). (Type: \`Deployment\`)
+     - **CRITICAL:** Every Deployment stage MUST include \`spec.deploymentType\` (e.g., Kubernetes, Ssh, WinRm).
+     - **Structure:**
+       \`\`\`yaml
+       - stage:
+           name: Deploy
+           type: Deployment
+           spec:
+             deploymentType: Kubernetes  # REQUIRED field
+             service: ...
+             environment: ...
+             execution:
+               steps: ...
+               rollbackSteps: ...
+           failureStrategies: ... # sibling to spec
+       \`\`\`
+   - **Custom Stage:** Use for general automation or notifications that don't fit CI/CD. (Type: \`Custom\`)
 
-2. **For Scripted Jenkins Pipelines:**
-   - Identify logical groups of steps as stages
-   - Convert node blocks to infrastructure definitions
-   - Preserve script execution order
+2. **Infrastructure Mapping:**
+   - **CI:** Map Jenkins agents to \`infrastructure.type: KubernetesDirect\` (preferred) or VM.
+   - **Deployment:** Map to \`spec.environment\` and \`spec.infrastructureDefinitions\`.
 
 3. **Step Type Mapping:**
-   - sh/bat scripts → Run step (containerized) or ShellScript step (delegate)
-   - git checkout → GitClone step
-   - Docker operations → BuildAndPush or Run step with Docker
-   - Maven/Gradle → Run step with appropriate container image
-   - Shared library calls → Convert to inline scripts or custom steps
+   - **Parallel:** Do NOT use \`type: Parallel\`. Use the list syntax:
+     \`\`\`yaml
+     - parallel:
+         - step: ...
+         - step: ...
+     \`\`\`
+   - **BuildAndPushDocker:** Use \`type: BuildAndPushDockerRegistry\`.
+   - **Slack:** Do NOT use \`type: Slack\`. Use \`type: Plugin\` (with Slack image) or \`type: Run\` (curl).
+   - sh/bat scripts → Run step (containerized) or ShellScript step (delegate).
+   - git checkout → GitClone step.
 
 4. **Shared Library Handling:**
-   - Analyze shared library function code
-   - Inline simple functions directly into Harness scripts
-   - For complex functions, create equivalent logic using Harness steps
-   - Document what each converted function does
+   - Analyze shared library function code.
+   - Inline simple functions directly into Harness scripts.
+   - For complex functions, create equivalent logic using Harness steps.
 
 5. **Variable & Parameter Mapping:**
    - Jenkins env.VAR → <+pipeline.variables.VAR>
-   - params.PARAM → <+pipeline.variables.PARAM> (as pipeline input)
-   - credentials('id') → <+secrets.getValue("id")>
-   - \${WORKSPACE} → <+workspace> or step working directory
+   - params.PARAM → <+pipeline.variables.PARAM> (as pipeline input).
+   - credentials('id') → <+secrets.getValue("id")>.
+   - \${WORKSPACE} → <+workspace> or step working directory.
 
 6. **Parallel Execution:**
-   - Jenkins parallel {} → Use strategy.parallelism or parallel step groups
-   - Preserve dependency order
-   - Use matrix strategy for repeated steps with different parameters
+   - Jenkins parallel {} → Use \`parallel:\` block or step groups.
+   - Preserve dependency order.
 
 7. **Error Handling:**
-   - catchError → Failure Strategy with "Mark as Success" or "Ignore"
-   - try/catch blocks → Failure Strategy with conditional execution
-   - Jenkins post{failure{}} → Failure Strategy with notification or rollback
-   - Jenkins post{always{}} → Use "Always Execute" condition on steps
-
-8. **Infrastructure:**
-   - For containerized builds:
-     - Use Kubernetes cluster infrastructure (KubernetesDirect)
-     - Specify appropriate container images
-   - For VM-based:
-     - Use SSH infrastructure or delegate selectors
+   - catchError → Failure Strategy with "Mark as Success" or "Ignore".
+   - Jenkins post{failure{}} → Failure Strategy with notification or rollback.
+   - Jenkins post{always{}} → Use "Always Execute" condition on steps.
 
 **YAML Generation Rules:**
-- Always include: orgIdentifier, projectIdentifier, name, identifier
-- Use valid identifier format: ^[a-zA-Z_][a-zA-Z0-9_]*$
-- Include all detected scripts from the bundle
-- Add comments to explain complex conversions
-- Use <+input> for values that need user configuration
+- Always include: orgIdentifier, projectIdentifier, name, identifier.
+- Use valid identifier format: ^[a-zA-Z_0-9-.][-0-9a-zA-Z_s.]{0,127}$
+- Include all detected scripts from the bundle.
+- Add comments to explain complex conversions.
+- Use <+input> for values that need user configuration.
 - Include tags: { migrated_from: "jenkins", ai_generated: "true" }
 
 **Required Sections:**
@@ -201,9 +207,16 @@ Review the existing Harness YAML and the complete Jenkins bundle data. Add any m
 - Maintain proper YAML indentation
 - Ensure all shared library logic is represented
 - Add failure strategies where Jenkins has error handling
+- Enforce identifier regex: ^[a-zA-Z_0-9-.][-0-9a-zA-Z_s.]{0,127}$
+- Ensure global settings:
+    orgIdentifier: TPM
+    projectIdentifier: Diego
+    tags:
+      migrated_using: windsurf-llm-gpt5
+      ai_generated: "true"
 
 **Output:**
-Return the FULL enriched Harness pipeline YAML (not just the changes).`;
+Return the FULL enriched Harness pipeline YAML (not just the changes) in a single yaml block.`;
 
 export const JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION = `You are performing final validation and ensuring complete parity between a Jenkins bundle and the generated Harness pipeline YAML.
 
@@ -299,40 +312,62 @@ pipeline:
 - If issues found, return corrected YAML with explanation comments
 - Preserve all existing correct elements
 - Maintain proper YAML indentation and structure
-- No additional text outside the YAML code block`;
+- No additional text outside the YAML code block
+- Enforce identifier regex: ^[a-zA-Z_0-9-.][-0-9a-zA-Z_s.]{0,127}$
+- Ensure global settings:
+    orgIdentifier: TPM
+    projectIdentifier: Diego
+    tags:
+      migrated_using: windsurf-llm-gpt5
+      ai_generated: "true"
+`;
 
 export const JENKINS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION = `You are a Harness pipeline YAML schema validator focused on ensuring the converted Jenkins pipeline is valid.
 
-**Validation Checklist:**
+**Validation Checklist & Autofix Rules:**
 
 1. **Required Fields:**
    - pipeline.name (string)
-   - pipeline.identifier (valid format: ^[a-zA-Z_][a-zA-Z0-9_]*$)
-   - pipeline.projectIdentifier
-   - pipeline.orgIdentifier
+   - pipeline.identifier (valid format: ^[a-zA-Z_0-9-.][-0-9a-zA-Z_s.]{0,127}$)
    - pipeline.stages (non-empty array)
 
 2. **Stage Validation:**
-   - Each stage has: name, identifier, type
-   - Stage type is valid: CI, Deployment, Custom, Approval, Pipeline
-   - Stage has spec object with required fields for its type
+   - **Deployment Stages:**
+     - Must include \`spec.deploymentType\`.
+     - \`failureStrategies\` MUST be a sibling of \`spec\` (under \`stage\`), NOT inside \`spec\` or \`execution\`.
+   - **CI Stages:**
+     - Must include \`spec.infrastructure\`.
 
-3. **Step Validation:**
-   - Each step has: name, identifier, type
-   - Step types are valid Harness step types
-   - Required step-specific fields present
+3. **Step Type Validation (CRITICAL):**
+   - **Parallel:** \`type: Parallel\` is **INVALID**.
+     - *Fix:* Convert to a list using the \`parallel:\` keyword.
+     - *Example:*
+       \`\`\`yaml
+       - parallel:
+           - step: ...
+           - step: ...
+       \`\`\`
+   - **Slack:** \`type: Slack\` is **INVALID**.
+     - *Fix:* Use \`type: Plugin\` (with Slack image) or \`type: Run\` (curl).
+   - **BuildAndPushDocker:** \`type: BuildAndPushDocker\` is **INVALID**.
+     - *Fix:* Change to \`type: BuildAndPushDockerRegistry\`.
+   - **General:** All types must be PascalCase (e.g., \`Run\`, \`ShellScript\`).
 
-4. **Identifier Format:**
-   - All identifiers match regex: ^[a-zA-Z_][a-zA-Z0-9_]*$
-   - No spaces or special characters except underscore
+4. **Approval Step Validation:**
+   - For \`type: HarnessApproval\`:
+     - \`spec.approvers\` MUST include \`disallowPipelineExecutor: false\` (or true).
+     - *Fix:* Inject \`disallowPipelineExecutor: false\` if missing.
 
-5. **Infrastructure:**
-   - CI stages have infrastructure definition
-   - Deployment stages have proper service/environment config
+5. **When Condition Validation:**
+   - Any \`when\` block with a \`condition\` must also have \`stageStatus\`.
+   - *Fix:* Inject \`stageStatus: Success\` (or appropriate status).
 
-6. **Expressions:**
-   - Harness expressions use valid syntax: <+...>
-   - No invalid or malformed expressions
+6. **Identifier Format:**
+   - All identifiers match regex: ^[a-zA-Z_0-9-.][-0-9a-zA-Z_s.]{0,127}$
+
+7. **R-245 Boolean Type Restriction:**
+   - Variables with \`type: Boolean\` are invalid.
+   - *Fix:* Change to \`type: String\` and quote value ("true"/"false").
 
 **Output Format:**
 
@@ -340,4 +375,9 @@ If valid:
 "Schema validation passed. The Harness pipeline YAML is structurally correct."
 
 If invalid:
-Return the FULL corrected pipeline YAML with all schema issues fixed. Add comments explaining what was corrected.`;
+Return the FULL corrected pipeline YAML with all schema issues fixed. Add comments explaining what was corrected.
+Ensure global tags are present:
+    tags:
+      migrated_using: windsurf-llm-gpt5
+      ai_generated: "true"
+`;

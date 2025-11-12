@@ -691,6 +691,68 @@ This ensures rollback logic is triggered on failure even if no explicit rollback
 If rollbackSteps is present and failureStrategies is missing → mark ❌ Invalid.
 If mode=fix, automatically inject the standard failureStrategies block.
 
+R-244 Environment Variable Normalization
+
+In any YAML section where environmentVariables: is defined, all variables must follow the structured list format using the keys name, type, and value.
+The type must always be "String", and the value must contain the original expression or string previously assigned.
+
+Invalid:
+
+environmentVariables:
+  installRoot: <+input>
+  versionName: <+artifact.version>
+
+
+Valid:
+
+environmentVariables:
+  - name: installRoot
+    type: String
+    value: <+input>
+  - name: versionName
+    type: String
+    value: <+artifact.version>
+
+
+Autofix:
+If any variable under environmentVariables: is written in key–value inline style (e.g., installRoot: <+input>), automatically convert it to the normalized list format with the structure:
+
+- name: <key>
+  type: String
+  value: <value>
+
+R-245 Boolean Type Restriction
+
+In any YAML definition where a variable block (such as under environmentVariables, pipeline.variables, or similar) includes a type field,
+the value of type must never be "Boolean".
+All variables — including those representing true/false values — must be declared with type: String instead.
+
+Invalid:
+
+- name: dryrun
+  type: Boolean
+  description: "For CLEANUP or DELETE_JRE8, set to 'true' for a dry run. Defaults to 'false'."
+  required: false
+  value: false
+
+
+Valid:
+
+- name: dryrun
+  type: String
+  description: "For CLEANUP or DELETE_JRE8, set to 'true' for a dry run. Defaults to 'false'."
+  required: false
+  value: "false"
+
+
+Autofix:
+If a variable is declared with type: Boolean, automatically change it to:
+
+type: String
+
+
+and ensure its value is converted to a quoted string ("true" or "false").
+
 R-250 Identifiers
 All identifier fields must be unique within scope and match ^[A-Za-z_][A-Za-z0-9_]*$
 Auto-normalize by replacing illegal chars with _ and collapsing repeats
