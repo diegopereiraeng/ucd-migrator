@@ -26,8 +26,8 @@ export const LLM_MODELS = {
     pro: 'claude-sonnet-4-20250514',    // For detailed summaries (latest flagship model)
   },
   openai: {
-    fast: 'gpt-4o-mini',
-    pro: 'gpt-4o',
+    fast: 'gpt-5-mini',
+    pro: 'gpt-5-mini',
   },
 } as const;
 

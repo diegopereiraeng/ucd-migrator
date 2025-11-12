@@ -19,6 +19,7 @@ import {
 } from '../services/aiService';
 import { SummaryView } from './SummaryView';
 import { CodeBlock } from './CodeBlock';
+import { FileTreeView } from './FileTreeView';
 import { AiIcon, CodeIcon, ProcessIcon, DownloadIcon, SettingsIcon, PlusIcon, SequentialIcon, BranchIcon, TrashIcon } from './icons';
 import { getSystemInstructions, getParserDisplayName } from '../services/promptSelector';
 import { LLMProvider, LLM_PROVIDER_NAMES } from '../services/llmProvider';
@@ -34,8 +35,26 @@ interface ProcessViewProps {
 const generateId = () => `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 const StepCard: React.FC<{ step: ParsedStep }> = ({ step }) => {
+  // Generate anchor ID if this step has a fileName property or if we can derive it from the step name
+  let anchorId: string | undefined;
+  if (step.properties?.fileName) {
+    anchorId = `file-${step.properties.fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+  } else if (step.name && (step.name.includes('Jenkinsfile') || step.name.includes('.groovy') || step.name.includes('.xml'))) {
+    // Try to extract filename from step name for common cases
+    const match = step.name.match(/(?:Shared Library: |Job Configuration \(|Build Configuration \()?([^:)]+)/);
+    if (match) {
+      anchorId = `file-${match[1].replace(/[^a-zA-Z0-9]/g, '_')}`;
+    }
+  }
+  
   return (
-    <div className="bg-card-dark border border-border-color rounded-lg mb-4">
+    <div 
+      id={anchorId}
+      className="bg-card-dark border border-border-color rounded-lg mb-4 transition-colors"
+      style={{
+        scrollMarginTop: '20px' // Add some space when scrolling to element
+      }}
+    >
       <div className="p-4">
         <h5 className="font-bold text-brand-secondary">{step.name}</h5>
         <p className="text-xs text-text-secondary italic mb-2">{step.details}</p>
@@ -49,6 +68,10 @@ const StepCard: React.FC<{ step: ParsedStep }> = ({ step }) => {
                     ))}
                 </ul>
             </div>
+        )}
+
+        {step.properties?.fileList && Array.isArray(step.properties.fileList) && (
+          <FileTreeView files={step.properties.fileList} />
         )}
 
         {step.scriptBody && <CodeBlock title="Script Body" code={step.scriptBody} />}
@@ -613,12 +636,23 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
 
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-text-primary mb-1">Analysis of <span className="text-brand-primary">{fileName}</span></h2>
-        <p className="text-text-secondary">Component Template: <span className="font-semibold">{parsedData.componentName}</span></p>
-        {error && <p className="text-red-500 mt-2">{error}</p>}
-      </div>
+    <>
+      <style>{`
+        @keyframes highlight-flash {
+          0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); border-color: rgb(99, 102, 241); }
+          50% { box-shadow: 0 0 20px 5px rgba(99, 102, 241, 0.4); border-color: rgb(99, 102, 241); }
+          100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); border-color: var(--border-color); }
+        }
+        .highlight-flash {
+          animation: highlight-flash 2s ease-in-out;
+        }
+      `}</style>
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-text-primary mb-1">Pipeline Analysis</h2>
+          <p className="text-text-secondary">Source: <span className="font-semibold">{parsedData.componentName}</span></p>
+          {error && <p className="text-red-500 mt-2">{error}</p>}
+        </div>
       
       <div className="bg-card-dark border border-border-color rounded-lg">
         <button onClick={() => setShowPromptSettings(!showPromptSettings)} className="w-full flex justify-between items-center p-3 text-sm font-semibold text-text-secondary hover:text-text-primary">
@@ -753,6 +787,7 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
           completedSteps={completedSteps}
           promptTemplates={promptTemplates}
         />
-    </div>
+      </div>
+    </>
   );
 };

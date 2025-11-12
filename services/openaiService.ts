@@ -48,8 +48,8 @@ export class OpenAIService implements ILLMService {
             content: userPrompt,
           },
         ],
-        temperature: 0.7,
-        max_tokens: 8192,
+        temperature: 1,
+        max_completion_tokens: 8192,
       });
 
       const content = response.choices[0]?.message?.content;
