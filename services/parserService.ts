@@ -2,6 +2,7 @@
 import { parseUCD } from './ucdParser';
 import { parseJenkins } from './jenkinsParser';
 import { parseGitHubActions } from './githubActionsParser';
+import { parseAzureDevOps } from './azureDevOpsParser';
 import { ParsedData } from '../types';
 
 export interface FileInput {
@@ -23,6 +24,10 @@ export const parsers: { [key: string]: { name: string; parse: ParserFunction } }
   githubActions: {
     name: 'Github Action Deploy',
     parse: parseGitHubActions,
+  },
+  azureDevOps: {
+    name: 'Azure DevOps',
+    parse: parseAzureDevOps,
   },
 };
 

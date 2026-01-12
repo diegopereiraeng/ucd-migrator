@@ -203,15 +203,23 @@ export const filterRelevantFiles = (files: ExtractedFile[]): ExtractedFile[] => 
       // GitHub Actions
       path.includes('.github/workflows/') ||
       path.includes('.github/actions/') ||
-      name.endsWith('.yml') ||
-      name.endsWith('.yaml') ||
+      // Azure DevOps
+      name === 'azure-pipelines.yml' ||
+      name === 'azure-pipelines.yaml' ||
+      name === '.azure-pipelines.yml' ||
+      name === '.azure-pipelines.yaml' ||
+      name.includes('azure-pipelines') ||
+      path.includes('azure-pipelines') ||
+      name.includes('template') && (name.endsWith('.yml') || name.endsWith('.yaml')) ||
       // Jenkins
       name === 'jenkinsfile' ||
       name.includes('jenkinsfile') ||
       name.endsWith('.groovy') ||
       name === 'config.xml' ||
       name === 'build.xml' ||
-      // General
+      // General YAML/JSON/XML
+      name.endsWith('.yml') ||
+      name.endsWith('.yaml') ||
       name.endsWith('.json') ||
       name.endsWith('.xml')
     );
