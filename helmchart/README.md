@@ -204,3 +204,4 @@ Then access at http://localhost:8080
 - Health checks are available at `/health` endpoint
 - The chart includes HPA support for automatic scaling
 
+
