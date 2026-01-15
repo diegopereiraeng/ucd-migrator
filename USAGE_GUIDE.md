@@ -87,6 +87,7 @@ Before you begin, ensure you have:
   - Google Gemini: [Get API Key](https://aistudio.google.com/app/apikey)
   - Anthropic Claude: [Get API Key](https://console.anthropic.com/)
   - OpenAI: [Get API Key](https://platform.openai.com/api-keys)
+  - GitHub Copilot: [Get API Key](https://github.com/settings/tokens)
 
 ---
 
@@ -121,6 +122,11 @@ VITE_CLAUDE_API_KEY=your_claude_api_key_here
 
 # For OpenAI (optional)
 VITE_OPENAI_API_KEY=your_openai_api_key_here
+
+# For GitHub Copilot (optional)
+VITE_COPILOT_API_KEY=your_copilot_api_key_here
+# Optional: Custom API endpoint (defaults to https://api.githubcopilot.com/v1/chat/completions)
+VITE_COPILOT_API_ENDPOINT=https://api.githubcopilot.com/v1/chat/completions
 ```
 
 **Important Notes:**
@@ -157,6 +163,7 @@ The application will start and display a URL (typically `http://localhost:3000` 
      - **Google Gemini** (default, recommended)
      - **Anthropic Claude**
      - **OpenAI GPT-4**
+     - **GitHub Copilot**
    - You can switch providers at any time during analysis
 
 ### Uploading Files

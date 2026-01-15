@@ -131,6 +131,7 @@ function App() {
                   <option value="gemini">{LLM_PROVIDER_NAMES.gemini}</option>
                   <option value="claude">{LLM_PROVIDER_NAMES.claude}</option>
                   <option value="openai">{LLM_PROVIDER_NAMES.openai}</option>
+                  <option value="copilot">{LLM_PROVIDER_NAMES.copilot}</option>
                 </select>
                 <p className="text-xs text-text-secondary mt-1">
                   Current: {LLM_PROVIDER_NAMES[selectedLLM]}

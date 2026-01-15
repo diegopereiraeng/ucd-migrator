@@ -108,11 +108,47 @@ For development/testing with different API keys:
 VITE_GEMINI_API_KEY=your_key_here
 VITE_CLAUDE_API_KEY=your_key_here
 VITE_OPENAI_API_KEY=your_key_here
+VITE_COPILOT_API_KEY=your_key_here
+VITE_COPILOT_API_ENDPOINT=https://api.githubcopilot.com/v1/chat/completions
 ```
 
 2. Rebuild the image:
 ```bash
 docker build -t ucd-migrator:latest .
+```
+
+### Running the Docker Image
+
+Once you've built the image, you can run it with:
+
+```bash
+docker run -d \
+  -p 8080:80 \
+  --name ucd-migrator \
+  ucd-migrator:latest
+```
+
+**Access the application:**
+- Open your browser and navigate to `http://localhost:8080`
+
+**Stop the container:**
+```bash
+docker stop ucd-migrator
+```
+
+**Remove the container:**
+```bash
+docker rm ucd-migrator
+```
+
+**View logs:**
+```bash
+docker logs ucd-migrator
+```
+
+**Run in interactive mode (for debugging):**
+```bash
+docker run -it --rm -p 8080:80 ucd-migrator:latest sh
 ```
 
 ---

@@ -6,6 +6,7 @@ import { LLMProvider, ILLMService, LLMGenerateOptions } from './llmProvider';
 import { geminiService } from './geminiServiceWrapper';
 import { claudeService } from './claudeService';
 import { openaiService } from './openaiService';
+import { copilotService } from './copilotService';
 import { stringifyParsedDataForPrompt, cleanYamlResponse } from './geminiService';
 
 // Export all system instructions from both UCD and Jenkins
@@ -17,6 +18,7 @@ class AIService {
     gemini: geminiService,
     claude: claudeService,
     openai: openaiService,
+    copilot: copilotService,
   };
 
   setProvider(provider: LLMProvider): void {

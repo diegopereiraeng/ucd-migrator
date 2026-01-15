@@ -1,7 +1,7 @@
 // services/llmProvider.ts
 // Abstract interface for LLM providers (Gemini, Claude, etc.)
 
-export type LLMProvider = 'gemini' | 'claude' | 'openai';
+export type LLMProvider = 'gemini' | 'claude' | 'openai' | 'copilot';
 
 export interface LLMGenerateOptions {
   systemInstruction: string;
@@ -29,10 +29,15 @@ export const LLM_MODELS = {
     fast: 'gpt-5-mini',
     pro: 'gpt-5-mini',
   },
+  copilot: {
+    fast: 'copilot-chat',
+    pro: 'copilot-chat',
+  },
 } as const;
 
 export const LLM_PROVIDER_NAMES: Record<LLMProvider, string> = {
   gemini: 'Google Gemini',
   claude: 'Anthropic Claude',
   openai: 'OpenAI GPT-4',
+  copilot: 'GitHub Copilot',
 };

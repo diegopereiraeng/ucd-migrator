@@ -703,6 +703,7 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
              <option value="gemini">{LLM_PROVIDER_NAMES.gemini}</option>
              <option value="claude">{LLM_PROVIDER_NAMES.claude}</option>
              <option value="openai">{LLM_PROVIDER_NAMES.openai}</option>
+             <option value="copilot">{LLM_PROVIDER_NAMES.copilot}</option>
            </select>
            <span className="text-xs text-text-secondary italic">💡 Switch anytime</span>
          </div>
