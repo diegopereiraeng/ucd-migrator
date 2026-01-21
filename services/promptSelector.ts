@@ -21,6 +21,13 @@ import {
   GITHUB_ACTIONS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
   GITHUB_ACTIONS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
 } from './githubActionsSystemInstructions';
+import {
+  AZURE_DEVOPS_SUMMARY_SYSTEM_INSTRUCTION,
+  AZURE_DEVOPS_HARNESS_YAML_SYSTEM_INSTRUCTION,
+  AZURE_DEVOPS_ENRICH_YAML_SYSTEM_INSTRUCTION,
+  AZURE_DEVOPS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
+  AZURE_DEVOPS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
+} from './azureDevOpsSystemInstructions';
 
 export interface SystemInstructions {
   summary: string;
@@ -54,6 +61,15 @@ export function getSystemInstructions(parserType: string): SystemInstructions {
         validateSchema: GITHUB_ACTIONS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
         customGeneration: DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION,
       };
+    case 'azureDevOps':
+      return {
+        summary: AZURE_DEVOPS_SUMMARY_SYSTEM_INSTRUCTION,
+        basePipeline: AZURE_DEVOPS_HARNESS_YAML_SYSTEM_INSTRUCTION,
+        enrichPipeline: AZURE_DEVOPS_ENRICH_YAML_SYSTEM_INSTRUCTION,
+        validateScripts: AZURE_DEVOPS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
+        validateSchema: AZURE_DEVOPS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
+        customGeneration: DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION,
+      };
     case 'ucd':
     default:
       return {
@@ -76,6 +92,8 @@ export function getParserDisplayName(parserType: string): string {
       return 'Jenkins';
     case 'githubActions':
       return 'Github Action Deploy';
+    case 'azureDevOps':
+      return 'Azure DevOps';
     case 'ucd':
       return 'UrbanCode Deploy';
     default:

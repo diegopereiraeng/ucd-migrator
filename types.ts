@@ -125,6 +125,102 @@ export interface GitHubStep {
   shell?: string;
 }
 
+// --- Raw Azure DevOps Bundle Interfaces ---
+
+export interface AzureDevOpsBundle {
+  pipelines: { [fileName: string]: string };
+  templates: { [fileName: string]: string };
+  variableGroups?: { [fileName: string]: string };
+  allFiles: { fileName: string; content: string; type: string }[];
+}
+
+export interface AzureDevOpsPipeline {
+  name?: string;
+  trigger?: AzureDevOpsTrigger;
+  pr?: AzureDevOpsTrigger;
+  schedules?: AzureDevOpsSchedule[];
+  variables?: { [key: string]: any };
+  stages: AzureDevOpsStage[];
+  resources?: any;
+  parameters?: any;
+}
+
+export interface AzureDevOpsTrigger {
+  branches?: {
+    include?: string[];
+    exclude?: string[];
+  };
+  paths?: {
+    include?: string[];
+    exclude?: string[];
+  };
+  tags?: {
+    include?: string[];
+    exclude?: string[];
+  };
+  [key: string]: any;
+}
+
+export interface AzureDevOpsSchedule {
+  cron?: string;
+  displayName?: string;
+  branches?: {
+    include?: string[];
+    exclude?: string[];
+  };
+  always?: boolean;
+}
+
+export interface AzureDevOpsStage {
+  stage?: string;
+  displayName?: string;
+  dependsOn?: string | string[];
+  condition?: string;
+  variables?: { [key: string]: any };
+  jobs?: AzureDevOpsJob[];
+  pool?: AzureDevOpsPool;
+}
+
+export interface AzureDevOpsJob {
+  job?: string;
+  displayName?: string;
+  dependsOn?: string | string[];
+  condition?: string;
+  pool?: AzureDevOpsPool;
+  strategy?: AzureDevOpsStrategy;
+  steps: AzureDevOpsStep[];
+  variables?: { [key: string]: any };
+  timeoutInMinutes?: number;
+}
+
+export interface AzureDevOpsPool {
+  vmImage?: string;
+  name?: string;
+  demands?: string[];
+}
+
+export interface AzureDevOpsStrategy {
+  matrix?: { [key: string]: { [key: string]: any } };
+  parallel?: number;
+  maxParallel?: number;
+}
+
+export interface AzureDevOpsStep {
+  task?: string;
+  displayName?: string;
+  name?: string;
+  condition?: string;
+  inputs?: { [key: string]: any };
+  script?: string;
+  bash?: string;
+  pwsh?: string;
+  powershell?: string;
+  env?: { [key: string]: string };
+  continueOnError?: boolean;
+  timeoutInMinutes?: number;
+  enabled?: boolean;
+}
+
 // --- Parsed Data Interfaces ---
 
 export interface ParsedPath {

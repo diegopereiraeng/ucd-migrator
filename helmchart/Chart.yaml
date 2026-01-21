@@ -1,0 +1,17 @@
+apiVersion: v2
+name: ucd-migrator
+description: A Helm chart for Harness UCD Process Analyzer & Migration Assistant
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - harness
+  - ucd
+  - migration
+  - ci-cd
+home: https://github.com/diegopereiraeng/ucd-migrator
+maintainers:
+  - name: Diego Pereira
+    email: diegopereiraeng@example.com
+
+
