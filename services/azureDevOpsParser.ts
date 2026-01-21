@@ -86,37 +86,58 @@ export const parseAzureDevOps = (files: FileInput[]): ParsedData | null => {
 const detectFileType = (fileName: string, content: string): string => {
   try {
     const lowerFileName = fileName.toLowerCase();
-    
-    // Check for variable group files
-    if (lowerFileName.includes('variable') || lowerFileName.includes('variable-group')) {
-      return 'variable-group';
-    }
-    
-    // Check for template files (usually contain 'template' in name or have template structure)
-    if (lowerFileName.includes('template') || 
-        lowerFileName.includes('template.yml') || 
-        lowerFileName.includes('template.yaml')) {
-      return 'template';
-    }
-    
+    const isYamlFile = lowerFileName.endsWith('.yml') || lowerFileName.endsWith('.yaml');
+    const nameIndicatesTemplate = lowerFileName.includes('template');
+    const nameIndicatesVariableGroup =
+      lowerFileName.includes('variable-group') || lowerFileName.includes('variable');
+
     // Try to parse as YAML to check structure
     const parsed = yaml.load(content) as any;
-    
-    // Check if it's a pipeline file (has stages or jobs at root)
-    if (parsed && (parsed.stages || parsed.jobs || parsed.trigger || parsed.pr)) {
-      return 'pipeline';
+
+    if (parsed && typeof parsed === 'object') {
+      const hasStages = !!parsed.stages;
+      const hasJobs = !!parsed.jobs;
+      const hasSteps = !!parsed.steps;
+      const hasTriggers = !!parsed.trigger || !!parsed.pr || !!parsed.schedules;
+      const hasResources = !!parsed.resources;
+      const hasExtends = !!parsed.extends;
+      const hasPool = !!parsed.pool;
+      const hasParameters = !!parsed.parameters;
+      const hasTemplateRef = !!parsed.template;
+
+      const hasPipelineSignals =
+        hasTriggers || hasResources || hasExtends || hasPool;
+
+      if (hasPipelineSignals) {
+        return 'pipeline';
+      }
+
+      if ((hasTemplateRef || hasParameters) && (hasStages || hasJobs || hasSteps)) {
+        return 'template';
+      }
+
+      if (hasStages || hasJobs || hasSteps) {
+        return nameIndicatesTemplate ? 'template' : 'pipeline';
+      }
+
+      if (parsed.variables) {
+        return 'variable-group';
+      }
     }
-    
-    // Check if it's a template (has parameters or is referenced as template)
-    if (parsed && (parsed.parameters || parsed.template || parsed.steps)) {
+
+    if (nameIndicatesTemplate) {
       return 'template';
     }
-    
+
+    if (nameIndicatesVariableGroup) {
+      return 'variable-group';
+    }
+
     // Default to pipeline for YAML files
-    if (lowerFileName.endsWith('.yml') || lowerFileName.endsWith('.yaml')) {
+    if (isYamlFile) {
       return 'pipeline';
     }
-    
+
     return 'unknown';
   } catch (error) {
     console.error('Error detecting file type:', error);
