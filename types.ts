@@ -46,31 +46,6 @@ export interface Edge {
 }
 
 
-// --- Raw Jenkins Bundle Interfaces ---
-
-export interface JenkinsBundle {
-  jenkinsfile?: string;
-  configXml?: string;
-  buildXml?: string;
-  groovyScripts: { [fileName: string]: string };
-  allFiles: { fileName: string; content: string; type: string }[];
-}
-
-export interface JenkinsStage {
-  name: string;
-  steps: JenkinsStep[];
-  agent?: string;
-  environment?: { [key: string]: string };
-  when?: string;
-}
-
-export interface JenkinsStep {
-  name: string;
-  type: string;
-  script?: string;
-  parameters?: { [key: string]: any };
-}
-
 // --- Raw GitHub Actions Bundle Interfaces ---
 
 export interface GitHubActionsBundle {

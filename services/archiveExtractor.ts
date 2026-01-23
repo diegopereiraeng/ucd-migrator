@@ -211,12 +211,6 @@ export const filterRelevantFiles = (files: ExtractedFile[]): ExtractedFile[] => 
       name.includes('azure-pipelines') ||
       path.includes('azure-pipelines') ||
       name.includes('template') && (name.endsWith('.yml') || name.endsWith('.yaml')) ||
-      // Jenkins
-      name === 'jenkinsfile' ||
-      name.includes('jenkinsfile') ||
-      name.endsWith('.groovy') ||
-      name === 'config.xml' ||
-      name === 'build.xml' ||
       // General YAML/JSON/XML
       name.endsWith('.yml') ||
       name.endsWith('.yaml') ||

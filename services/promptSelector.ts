@@ -8,11 +8,6 @@ import {
   VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
   VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
   DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION,
-  JENKINS_SUMMARY_SYSTEM_INSTRUCTION,
-  JENKINS_HARNESS_YAML_SYSTEM_INSTRUCTION,
-  JENKINS_ENRICH_YAML_SYSTEM_INSTRUCTION,
-  JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
-  JENKINS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
 } from './aiService';
 import {
   GITHUB_ACTIONS_SUMMARY_SYSTEM_INSTRUCTION,
@@ -43,15 +38,6 @@ export interface SystemInstructions {
  */
 export function getSystemInstructions(parserType: string): SystemInstructions {
   switch (parserType) {
-    case 'jenkins':
-      return {
-        summary: JENKINS_SUMMARY_SYSTEM_INSTRUCTION,
-        basePipeline: JENKINS_HARNESS_YAML_SYSTEM_INSTRUCTION,
-        enrichPipeline: JENKINS_ENRICH_YAML_SYSTEM_INSTRUCTION,
-        validateScripts: JENKINS_VALIDATE_SCRIPTS_SYSTEM_INSTRUCTION,
-        validateSchema: JENKINS_VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
-        customGeneration: DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION,
-      };
     case 'githubActions':
       return {
         summary: GITHUB_ACTIONS_SUMMARY_SYSTEM_INSTRUCTION,
@@ -88,8 +74,6 @@ export function getSystemInstructions(parserType: string): SystemInstructions {
  */
 export function getParserDisplayName(parserType: string): string {
   switch (parserType) {
-    case 'jenkins':
-      return 'Jenkins';
     case 'githubActions':
       return 'Github Action Deploy';
     case 'azureDevOps':

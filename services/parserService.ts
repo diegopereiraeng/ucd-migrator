@@ -1,6 +1,5 @@
 // services/parserService.ts
 import { parseUCD } from './ucdParser';
-import { parseJenkins } from './jenkinsParser';
 import { parseGitHubActions } from './githubActionsParser';
 import { parseAzureDevOps } from './azureDevOpsParser';
 import { ParsedData } from '../types';
@@ -17,10 +16,6 @@ export const parsers: { [key: string]: { name: string; parse: ParserFunction } }
     name: 'UrbanCode Deploy',
     parse: parseUCD,
   },
-  jenkins: {
-    name: 'Jenkins Deploy',
-    parse: parseJenkins,
-  },
   githubActions: {
     name: 'Github Action Deploy',
     parse: parseGitHubActions,
@@ -31,4 +26,4 @@ export const parsers: { [key: string]: { name: string; parse: ParserFunction } }
   },
 };
 
-export const defaultParserKey = 'jenkins';
+export const defaultParserKey = 'ucd';

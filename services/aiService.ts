@@ -8,7 +8,7 @@ import { claudeService } from './claudeService';
 import { openaiService } from './openaiService';
 import { stringifyParsedDataForPrompt, cleanYamlResponse } from './geminiService';
 
-// Export all system instructions from both UCD and Jenkins
+// Export all system instructions from UCD
 export * from './geminiService';
 
 class AIService {

@@ -35,16 +35,10 @@ interface ProcessViewProps {
 const generateId = () => `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 const StepCard: React.FC<{ step: ParsedStep }> = ({ step }) => {
-  // Generate anchor ID if this step has a fileName property or if we can derive it from the step name
+  // Generate anchor ID if this step has a fileName property
   let anchorId: string | undefined;
   if (step.properties?.fileName) {
     anchorId = `file-${step.properties.fileName.replace(/[^a-zA-Z0-9]/g, '_')}`;
-  } else if (step.name && (step.name.includes('Jenkinsfile') || step.name.includes('.groovy') || step.name.includes('.xml'))) {
-    // Try to extract filename from step name for common cases
-    const match = step.name.match(/(?:Shared Library: |Job Configuration \(|Build Configuration \()?([^:)]+)/);
-    if (match) {
-      anchorId = `file-${match[1].replace(/[^a-zA-Z0-9]/g, '_')}`;
-    }
   }
   
   return (
