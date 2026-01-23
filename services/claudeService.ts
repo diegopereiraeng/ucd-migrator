@@ -35,7 +35,7 @@ export class ClaudeService implements ILLMService {
       
       const response = await client.messages.create({
         model: model || this.getDefaultModel(),
-        max_tokens: 8192,
+        max_tokens: 16384,
         system: systemInstruction,
         messages: [
           {
