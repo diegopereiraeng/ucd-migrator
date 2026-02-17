@@ -1,7 +1,75 @@
 // services/azureDevOpsParser.ts
-import { AzureDevOpsBundle, ParsedData, ParsedProcess, ParsedStep, AzureDevOpsPipeline, AzureDevOpsJob, AzureDevOpsStage } from '../types';
+import { AzureDevOpsBundle, ParsedData, ParsedProcess, ParsedStep, AzureDevOpsPipeline, AzureDevOpsJob, AzureDevOpsStage, AzureDevOpsStep } from '../types';
 import { FileInput } from './parserService';
 import * as yaml from 'js-yaml';
+
+// Azure DevOps Release Definition (Classic) interfaces
+interface AzureDevOpsReleaseDefinition {
+  source?: number;
+  revision?: number;
+  description?: string;
+  createdBy?: any;
+  createdOn?: string;
+  modifiedBy?: any;
+  modifiedOn?: string;
+  isDeleted?: boolean;
+  lastRelease?: any;
+  variables?: { [key: string]: { value: string; isSecret?: boolean } };
+  variableGroups?: any[];
+  environments?: AzureDevOpsReleaseEnvironment[];
+  artifacts?: any[];
+  triggers?: any[];
+  releaseNameFormat?: string;
+  name?: string;
+}
+
+interface AzureDevOpsReleaseEnvironment {
+  id?: number;
+  name: string;
+  rank?: number;
+  owner?: any;
+  variables?: { [key: string]: { value: string; isSecret?: boolean } };
+  variableGroups?: any[];
+  preDeployApprovals?: any;
+  postDeployApprovals?: any;
+  deployPhases?: AzureDevOpsDeployPhase[];
+  environmentOptions?: any;
+  demands?: any[];
+  conditions?: any[];
+  executionPolicy?: any;
+  schedules?: any[];
+  retentionPolicy?: any;
+  properties?: any;
+  preDeploymentGates?: any;
+  postDeploymentGates?: any;
+  environmentTriggers?: any[];
+  badgeUrl?: string;
+}
+
+interface AzureDevOpsDeployPhase {
+  deploymentInput?: any;
+  rank?: number;
+  phaseType?: number;
+  name?: string;
+  refName?: string;
+  workflowTasks?: AzureDevOpsWorkflowTask[];
+}
+
+interface AzureDevOpsWorkflowTask {
+  environment?: any;
+  taskId?: string;
+  version?: string;
+  name?: string;
+  refName?: string;
+  enabled?: boolean;
+  alwaysRun?: boolean;
+  continueOnError?: boolean;
+  timeoutInMinutes?: number;
+  definitionType?: string;
+  overrideInputs?: any;
+  condition?: string;
+  inputs?: { [key: string]: string };
+}
 
 /**
  * Parses Azure DevOps pipeline files and converts them into ParsedData format
@@ -41,8 +109,12 @@ export const parseAzureDevOps = (files: FileInput[]): ParsedData | null => {
       }
     });
 
+    // Check for release definitions in allFiles
+    const releaseDefinitions = bundle.allFiles.filter(f => f.type === 'release-definition');
+    
     if (Object.keys(bundle.pipelines).length === 0 && 
-        Object.keys(bundle.templates).length === 0) {
+        Object.keys(bundle.templates).length === 0 &&
+        releaseDefinitions.length === 0) {
       console.error('No valid Azure DevOps files found in bundle');
       return null;
     }
@@ -66,6 +138,14 @@ export const parseAzureDevOps = (files: FileInput[]): ParsedData | null => {
       }
     });
 
+    // Parse release definitions (classic JSON pipelines)
+    releaseDefinitions.forEach(({ fileName, content }) => {
+      const releaseProcesses = parseReleaseDefinition(fileName, content);
+      if (releaseProcesses) {
+        processes.push(...releaseProcesses);
+      }
+    });
+
     // Add a summary process with all file information
     const summaryProcess = createSummaryProcess(bundle);
     processes.unshift(summaryProcess);
@@ -86,6 +166,20 @@ export const parseAzureDevOps = (files: FileInput[]): ParsedData | null => {
 const detectFileType = (fileName: string, content: string): string => {
   try {
     const lowerFileName = fileName.toLowerCase();
+    
+    // Check for JSON files - could be Release Definitions
+    if (lowerFileName.endsWith('.json')) {
+      try {
+        const parsed = JSON.parse(content);
+        // Check if it's a Release Definition (has environments array with deployPhases)
+        if (parsed.environments && Array.isArray(parsed.environments) && 
+            parsed.environments.some((env: any) => env.deployPhases)) {
+          return 'release-definition';
+        }
+      } catch (e) {
+        // Not valid JSON, continue with other checks
+      }
+    }
     
     // Check for variable group files
     if (lowerFileName.includes('variable') || lowerFileName.includes('variable-group')) {
@@ -414,6 +508,234 @@ const extractTriggers = (trigger: any): string[] => {
   }
   
   return triggers;
+};
+
+/**
+ * Parses an Azure DevOps Release Definition (classic JSON pipeline)
+ */
+const parseReleaseDefinition = (fileName: string, content: string): ParsedProcess[] | null => {
+  try {
+    const releaseDefinition: AzureDevOpsReleaseDefinition = JSON.parse(content);
+    const processes: ParsedProcess[] = [];
+
+    // Create a main process for the release definition
+    const mainFlow: ParsedStep[] = [];
+
+    // Add release definition-level information
+    const releaseStep: ParsedStep = {
+      name: `Release Definition: ${releaseDefinition.name || fileName}`,
+      id: `release_${sanitizeId(fileName)}`,
+      type: 'plugin',
+      details: 'Azure DevOps Release Definition (Classic)',
+      properties: {
+        fileName,
+        releaseName: releaseDefinition.name,
+        revision: releaseDefinition.revision,
+        createdOn: releaseDefinition.createdOn,
+        modifiedOn: releaseDefinition.modifiedOn,
+        environmentCount: releaseDefinition.environments?.length || 0,
+        variableCount: releaseDefinition.variables ? Object.keys(releaseDefinition.variables).length : 0
+      },
+      scriptBody: content,
+      incomingPaths: []
+    };
+    mainFlow.push(releaseStep);
+
+    // Add variables step if present
+    if (releaseDefinition.variables && Object.keys(releaseDefinition.variables).length > 0) {
+      const variablesStep: ParsedStep = {
+        name: 'Release Variables',
+        id: `release_${sanitizeId(fileName)}_variables`,
+        type: 'plugin',
+        details: 'Pipeline-level variables',
+        properties: {
+          variables: Object.entries(releaseDefinition.variables).map(([key, val]) => ({
+            name: key,
+            value: val.isSecret ? '***SECRET***' : val.value,
+            isSecret: val.isSecret || false
+          }))
+        },
+        incomingPaths: []
+      };
+      mainFlow.push(variablesStep);
+    }
+
+    // Parse each environment (stage)
+    if (releaseDefinition.environments) {
+      releaseDefinition.environments.forEach((env, envIndex) => {
+        const envSteps = parseReleaseEnvironment(fileName, env, envIndex);
+        mainFlow.push(...envSteps);
+      });
+    }
+
+    processes.push({
+      name: releaseDefinition.name || fileName,
+      description: `Azure DevOps Release Definition from ${fileName}`,
+      mainFlow,
+      failureFlow: []
+    });
+
+    return processes;
+  } catch (error) {
+    console.error(`Error parsing release definition ${fileName}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Parses an Azure DevOps Release Environment (stage in classic pipeline)
+ */
+const parseReleaseEnvironment = (fileName: string, env: AzureDevOpsReleaseEnvironment, envIndex: number): ParsedStep[] => {
+  const steps: ParsedStep[] = [];
+
+  // Add environment-level information
+  const envStep: ParsedStep = {
+    name: `Environment: ${env.name}`,
+    id: `env_${sanitizeId(fileName)}_${envIndex}`,
+    type: 'plugin',
+    details: `Azure DevOps Release Environment (Rank: ${env.rank || envIndex + 1})`,
+    properties: {
+      environmentId: env.id,
+      environmentName: env.name,
+      rank: env.rank,
+      owner: env.owner?.displayName,
+      variableCount: env.variables ? Object.keys(env.variables).length : 0,
+      phaseCount: env.deployPhases?.length || 0,
+      hasPreDeployApprovals: env.preDeployApprovals?.approvals?.some((a: any) => !a.isAutomated) || false,
+      hasPostDeployApprovals: env.postDeployApprovals?.approvals?.some((a: any) => !a.isAutomated) || false,
+      conditions: env.conditions,
+      retentionPolicy: env.retentionPolicy
+    },
+    incomingPaths: []
+  };
+  steps.push(envStep);
+
+  // Add environment variables if present
+  if (env.variables && Object.keys(env.variables).length > 0) {
+    const envVarsStep: ParsedStep = {
+      name: `${env.name} Variables`,
+      id: `env_${sanitizeId(fileName)}_${envIndex}_variables`,
+      type: 'plugin',
+      details: 'Environment-level variables',
+      properties: {
+        variables: Object.entries(env.variables).map(([key, val]) => ({
+          name: key,
+          value: val.isSecret ? '***SECRET***' : val.value,
+          isSecret: val.isSecret || false
+        }))
+      },
+      incomingPaths: []
+    };
+    steps.push(envVarsStep);
+  }
+
+  // Parse deploy phases
+  if (env.deployPhases) {
+    env.deployPhases.forEach((phase, phaseIndex) => {
+      const phaseSteps = parseDeployPhase(fileName, env.name, phase, envIndex, phaseIndex);
+      steps.push(...phaseSteps);
+    });
+  }
+
+  return steps;
+};
+
+/**
+ * Parses an Azure DevOps Deploy Phase (job in classic pipeline)
+ */
+const parseDeployPhase = (
+  fileName: string, 
+  envName: string, 
+  phase: AzureDevOpsDeployPhase, 
+  envIndex: number, 
+  phaseIndex: number
+): ParsedStep[] => {
+  const steps: ParsedStep[] = [];
+
+  // Add phase-level information
+  const phaseStep: ParsedStep = {
+    name: `Phase: ${phase.name || `Phase ${phaseIndex + 1}`}`,
+    id: `phase_${sanitizeId(fileName)}_${envIndex}_${phaseIndex}`,
+    type: 'plugin',
+    details: `Deploy Phase (Type: ${getPhaseTypeName(phase.phaseType)})`,
+    properties: {
+      phaseName: phase.name,
+      phaseType: phase.phaseType,
+      phaseTypeName: getPhaseTypeName(phase.phaseType),
+      rank: phase.rank,
+      deploymentInput: phase.deploymentInput,
+      taskCount: phase.workflowTasks?.length || 0
+    },
+    incomingPaths: []
+  };
+  steps.push(phaseStep);
+
+  // Parse workflow tasks
+  if (phase.workflowTasks) {
+    phase.workflowTasks.forEach((task, taskIndex) => {
+      const taskStep = parseWorkflowTask(fileName, envName, task, envIndex, phaseIndex, taskIndex);
+      steps.push(taskStep);
+    });
+  }
+
+  return steps;
+};
+
+/**
+ * Parses an Azure DevOps Workflow Task
+ */
+const parseWorkflowTask = (
+  fileName: string,
+  envName: string,
+  task: AzureDevOpsWorkflowTask,
+  envIndex: number,
+  phaseIndex: number,
+  taskIndex: number
+): ParsedStep => {
+  // Determine script body from inputs
+  let scriptBody: string | undefined;
+  if (task.inputs) {
+    if (task.inputs.script) {
+      scriptBody = task.inputs.script;
+    } else if (task.inputs.filePath) {
+      scriptBody = `File: ${task.inputs.filePath}${task.inputs.arguments ? `\nArguments: ${task.inputs.arguments}` : ''}`;
+    }
+  }
+
+  return {
+    name: task.name || `Task ${taskIndex + 1}`,
+    id: `task_${sanitizeId(fileName)}_${envIndex}_${phaseIndex}_${taskIndex}`,
+    type: 'plugin',
+    details: `Task: ${task.taskId || 'Unknown'} (v${task.version || '*'})`,
+    properties: {
+      taskId: task.taskId,
+      version: task.version,
+      enabled: task.enabled !== false,
+      alwaysRun: task.alwaysRun || false,
+      continueOnError: task.continueOnError || false,
+      timeoutInMinutes: task.timeoutInMinutes,
+      condition: task.condition,
+      definitionType: task.definitionType,
+      inputs: task.inputs,
+      targetType: task.inputs?.targetType,
+      environment: envName
+    },
+    scriptBody,
+    incomingPaths: []
+  };
+};
+
+/**
+ * Gets the human-readable name for a phase type
+ */
+const getPhaseTypeName = (phaseType?: number): string => {
+  switch (phaseType) {
+    case 1: return 'Agent-based deployment';
+    case 2: return 'Run on server';
+    case 3: return 'Machine group deployment';
+    case 4: return 'Deployment group';
+    default: return `Unknown (${phaseType})`;
+  }
 };
 
 /**

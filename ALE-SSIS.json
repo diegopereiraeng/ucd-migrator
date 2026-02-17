@@ -1,0 +1,1253 @@
+{
+	"source": 2,
+	"revision": 39,
+	"description": null,
+	"createdBy": {
+		"displayName": "James R. Taylor",
+		"url": "https://wpadosapp.rgbk.com/Trust/_apis/Identities/74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+		"_links": {
+			"avatar": {
+				"href": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+			}
+		},
+		"id": "74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+		"uniqueName": "CORP\\A008744",
+		"imageUrl": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI",
+		"descriptor": "win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+	},
+	"createdOn": "2022-02-17T22:06:56.803Z",
+	"modifiedBy": {
+		"displayName": "Zachery Zima",
+		"url": "https://wpadosapp.rgbk.com/Trust/_apis/Identities/3528191a-890d-4666-a7ff-ebd140239378",
+		"_links": {
+			"avatar": {
+				"href": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS00NjY0MDA"
+			}
+		},
+		"id": "3528191a-890d-4666-a7ff-ebd140239378",
+		"uniqueName": "CORP\\F7FU9",
+		"imageUrl": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS00NjY0MDA",
+		"inactive": true,
+		"descriptor": "win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS00NjY0MDA"
+	},
+	"modifiedOn": "2025-06-12T22:16:37.560Z",
+	"isDeleted": false,
+	"lastRelease": {
+		"id": 26368,
+		"name": "ALE-SSIS-01-23-2026-31762-26368",
+		"artifacts": [],
+		"_links": {},
+		"description": "Triggered by ALE-SSIS 31762.",
+		"releaseDefinition": {
+			"id": 314,
+			"projectReference": null,
+			"_links": {}
+		},
+		"createdOn": "2026-01-23T14:44:52.403Z",
+		"createdBy": {
+			"displayName": "James R. Taylor",
+			"url": "https://wpadosapp.rgbk.com/Trust/_apis/Identities/74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+			"_links": {
+				"avatar": {
+					"href": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+				}
+			},
+			"id": "74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+			"uniqueName": "CORP\\A008744",
+			"imageUrl": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI",
+			"descriptor": "win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+		}
+	},
+	"variables": {
+		"EnvironmentDescription": {
+			"value": "Environment for variables"
+		},
+		"EnvironmentName": {
+			"value": "Default"
+		},
+		"EnvironmentVariableCsv": {
+			"value": "$(Release.EnvironmentName).csv"
+		},
+		"FolderDescription": {
+			"value": "Folder for SSIS"
+		},
+		"FolderName": {
+			"value": "ALE_$(Release.EnvironmentName)"
+		},
+		"HashiAppRole": {
+			"value": "ale_dev_approle"
+		},
+		"HashiNameSpace": {
+			"value": "ale"
+		},
+		"HashiPwdVar": {
+			"value": "WORKDAY_SERVICE_PASSWORD"
+		},
+		"HashiRelPwdVar": {
+			"value": "Workday_ServerPassword"
+		},
+		"HashiRelUserVar": {
+			"value": "Workday_ServerUserName"
+		},
+		"HashiRoleID": {
+			"value": null,
+			"isSecret": true
+		},
+		"HashiSecretID": {
+			"value": null,
+			"isSecret": true
+		},
+		"HashiUrlRoot": {
+			"value": "https://thv.rgbk.com:8200/"
+		},
+		"HashiUserVar": {
+			"value": "WORKDAY_SERVICE_USER"
+		},
+		"JobDatabase": {
+			"value": "msdb"
+		},
+		"JobOwnerSvcAccount": {
+			"value": "CORP\\SVC_CD_ALE_T"
+		},
+		"JobPartialName": {
+			"value": "ALE_$(Release.EnvironmentName).Default"
+		},
+		"maintenancedb": {
+			"value": "dbMaintenance"
+		},
+		"SchedulesCsv": {
+			"value": "Schedules_Nonprod.csv"
+		},
+		"SsisCommandDatabase": {
+			"value": "master"
+		},
+		"SSISProxy": {
+			"value": ""
+		},
+		"SsrsCJOJobName_NotSa": {
+			"value": "_Change_ALE_Jobs_to_SVC_CD_ALE_T"
+		},
+		"SsrsCJOStepName_NotSa": {
+			"value": "SVC_CD_ALE_T change"
+		},
+		"System.Debug": {
+			"value": "true"
+		},
+		"Workday_ServerPassword": {
+			"value": null,
+			"isSecret": true
+		},
+		"Workday_ServerUserName": {
+			"value": null,
+			"isSecret": true
+		}
+	},
+	"variableGroups": [],
+	"environments": [
+		{
+			"id": 578,
+			"name": "Dev",
+			"rank": 1,
+			"owner": {
+				"displayName": "James R. Taylor",
+				"url": "https://wpadosapp.rgbk.com/Trust/_apis/Identities/74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+				"_links": {
+					"avatar": {
+						"href": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+					}
+				},
+				"id": "74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+				"uniqueName": "CORP\\A008744",
+				"imageUrl": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI",
+				"descriptor": "win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+			},
+			"variables": {
+				"EnableJobs": {
+					"value": "0"
+				},
+				"HashiSecretPath": {
+					"value": "ssis/dev/secrets"
+				},
+				"SsisServer": {
+					"value": "WTTRDBSQL02,22748"
+				}
+			},
+			"variableGroups": [],
+			"preDeployApprovals": {
+				"approvals": [
+					{
+						"rank": 1,
+						"isAutomated": true,
+						"isNotificationOn": false,
+						"id": 1811
+					}
+				],
+				"approvalOptions": {
+					"requiredApproverCount": null,
+					"releaseCreatorCanBeApprover": false,
+					"autoTriggeredAndPreviousEnvironmentApprovedCanBeSkipped": false,
+					"enforceIdentityRevalidation": false,
+					"timeoutInMinutes": 0,
+					"executionOrder": 1
+				}
+			},
+			"deployStep": {
+				"id": 1812
+			},
+			"postDeployApprovals": {
+				"approvals": [
+					{
+						"rank": 1,
+						"isAutomated": true,
+						"isNotificationOn": false,
+						"id": 1813
+					}
+				],
+				"approvalOptions": {
+					"requiredApproverCount": null,
+					"releaseCreatorCanBeApprover": false,
+					"autoTriggeredAndPreviousEnvironmentApprovedCanBeSkipped": false,
+					"enforceIdentityRevalidation": false,
+					"timeoutInMinutes": 0,
+					"executionOrder": 2
+				}
+			},
+			"deployPhases": [
+				{
+					"deploymentInput": {
+						"healthPercent": 0,
+						"deploymentHealthOption": "Custom",
+						"tags": [
+							"ALE-DEV"
+						],
+						"skipArtifactsDownload": false,
+						"artifactsDownloadInput": {
+							"downloadInputs": []
+						},
+						"queueId": 15,
+						"demands": [],
+						"enableAccessToken": false,
+						"timeoutInMinutes": 0,
+						"jobCancelTimeoutInMinutes": 1,
+						"condition": "succeeded()",
+						"overrideInputs": {}
+					},
+					"rank": 1,
+					"phaseType": 4,
+					"name": "Deployment group job",
+					"refName": null,
+					"workflowTasks": [
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Read Hashicorp Vault",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "filePath",
+								"filePath": "$(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/Hashicorp_Vaults.ps1",
+								"arguments": "-RoleID $(HashiRoleID) -SecretID $(HashiSecretID)",
+								"script": "",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						},
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Replace Workday Credentials",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "inline",
+								"filePath": "",
+								"arguments": "",
+								"script": "((Get-Content -path $(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/$(EnvironmentVariableCsv) -Raw) -replace 'WorkdayPassword','$(Workday_ServerPassword)' -replace 'WorkdayUserName','$(Workday_ServerUserName)') | Set-Content -Path $(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/$(EnvironmentVariableCsv)\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						},
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Deploy SSIS",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "filePath",
+								"filePath": "$(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/deployscriptsensitive.ps1",
+								"arguments": "",
+								"script": "# Write your PowerShell commands here.\n\nWrite-Host \"Hello World\"\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						}
+					]
+				}
+			],
+			"environmentOptions": {
+				"emailNotificationType": "OnlyOnFailure",
+				"emailRecipients": "release.environment.owner;release.creator",
+				"skipArtifactsDownload": false,
+				"timeoutInMinutes": 0,
+				"enableAccessToken": false,
+				"publishDeploymentStatus": true,
+				"badgeEnabled": false,
+				"autoLinkWorkItems": false,
+				"pullRequestDeploymentEnabled": false
+			},
+			"demands": [],
+			"conditions": [
+				{
+					"name": "ReleaseStarted",
+					"conditionType": 1,
+					"value": ""
+				}
+			],
+			"executionPolicy": {
+				"concurrencyCount": 1,
+				"queueDepthCount": 0
+			},
+			"schedules": [],
+			"currentRelease": {
+				"id": 26368,
+				"url": "https://wpadosapp.rgbk.com/Trust/cacc4a15-4e07-4de3-a0db-a13aff545ac8/_apis/Release/releases/26368",
+				"_links": {}
+			},
+			"retentionPolicy": {
+				"daysToKeep": 30,
+				"releasesToKeep": 3,
+				"retainBuild": true
+			},
+			"processParameters": {},
+			"properties": {
+				"LinkBoardsWorkItems": {
+					"$type": "System.String",
+					"$value": "False"
+				},
+				"BoardsEnvironmentType": {
+					"$type": "System.String",
+					"$value": "unmapped"
+				}
+			},
+			"preDeploymentGates": {
+				"id": 0,
+				"gatesOptions": null,
+				"gates": []
+			},
+			"postDeploymentGates": {
+				"id": 0,
+				"gatesOptions": null,
+				"gates": []
+			},
+			"environmentTriggers": [],
+			"badgeUrl": "https://wpadosapp.rgbk.com/Trust/_apis/public/Release/badge/cacc4a15-4e07-4de3-a0db-a13aff545ac8/314/578"
+		},
+		{
+			"id": 579,
+			"name": "Test01",
+			"rank": 2,
+			"owner": {
+				"displayName": "James R. Taylor",
+				"url": "https://wpadosapp.rgbk.com/Trust/_apis/Identities/74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+				"_links": {
+					"avatar": {
+						"href": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+					}
+				},
+				"id": "74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+				"uniqueName": "CORP\\A008744",
+				"imageUrl": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI",
+				"descriptor": "win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+			},
+			"variables": {
+				"EnableJobs": {
+					"value": "0"
+				},
+				"HashiSecretPath": {
+					"value": "ssis/test/secrets"
+				},
+				"SsisServer": {
+					"value": "WTTRDBSQL02,22748"
+				}
+			},
+			"variableGroups": [],
+			"preDeployApprovals": {
+				"approvals": [
+					{
+						"rank": 1,
+						"isAutomated": true,
+						"isNotificationOn": false,
+						"id": 1814
+					}
+				],
+				"approvalOptions": {
+					"requiredApproverCount": null,
+					"releaseCreatorCanBeApprover": false,
+					"autoTriggeredAndPreviousEnvironmentApprovedCanBeSkipped": false,
+					"enforceIdentityRevalidation": false,
+					"timeoutInMinutes": 0,
+					"executionOrder": 1
+				}
+			},
+			"deployStep": {
+				"id": 1817
+			},
+			"postDeployApprovals": {
+				"approvals": [
+					{
+						"rank": 1,
+						"isAutomated": true,
+						"isNotificationOn": false,
+						"id": 1818
+					}
+				],
+				"approvalOptions": {
+					"requiredApproverCount": null,
+					"releaseCreatorCanBeApprover": false,
+					"autoTriggeredAndPreviousEnvironmentApprovedCanBeSkipped": false,
+					"enforceIdentityRevalidation": false,
+					"timeoutInMinutes": 0,
+					"executionOrder": 2
+				}
+			},
+			"deployPhases": [
+				{
+					"deploymentInput": {
+						"healthPercent": 0,
+						"deploymentHealthOption": "Custom",
+						"tags": [
+							"ALE-DEV"
+						],
+						"skipArtifactsDownload": false,
+						"artifactsDownloadInput": {
+							"downloadInputs": []
+						},
+						"queueId": 15,
+						"demands": [],
+						"enableAccessToken": false,
+						"timeoutInMinutes": 0,
+						"jobCancelTimeoutInMinutes": 1,
+						"condition": "succeeded()",
+						"overrideInputs": {}
+					},
+					"rank": 1,
+					"phaseType": 4,
+					"name": "Deployment group job",
+					"refName": null,
+					"workflowTasks": [
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Read Hashicorp Vault",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "filePath",
+								"filePath": "$(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/Hashicorp_Vaults.ps1",
+								"arguments": "-RoleID $(HashiRoleID) -SecretID $(HashiSecretID)",
+								"script": "# Write your PowerShell commands here.\n\nWrite-Host \"Hello World\"\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						},
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Replace Workday Credentials",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "inline",
+								"filePath": "",
+								"arguments": "",
+								"script": "((Get-Content -path $(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/$(EnvironmentVariableCsv) -Raw) -replace 'WorkdayPassword','$(Workday_ServerPassword)' -replace 'WorkdayUserName','$(Workday_ServerUserName)') | Set-Content -Path $(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/$(EnvironmentVariableCsv)\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						},
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Deploy SSIS",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "filePath",
+								"filePath": "$(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/deployscriptsensitive.ps1",
+								"arguments": "",
+								"script": "# Write your PowerShell commands here.\n\nWrite-Host \"Hello World\"\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						}
+					]
+				}
+			],
+			"environmentOptions": {
+				"emailNotificationType": "OnlyOnFailure",
+				"emailRecipients": "release.environment.owner;release.creator",
+				"skipArtifactsDownload": false,
+				"timeoutInMinutes": 0,
+				"enableAccessToken": false,
+				"publishDeploymentStatus": true,
+				"badgeEnabled": false,
+				"autoLinkWorkItems": false,
+				"pullRequestDeploymentEnabled": false
+			},
+			"demands": [],
+			"conditions": [],
+			"executionPolicy": {
+				"concurrencyCount": 1,
+				"queueDepthCount": 0
+			},
+			"schedules": [],
+			"currentRelease": {
+				"id": 26368,
+				"url": "https://wpadosapp.rgbk.com/Trust/cacc4a15-4e07-4de3-a0db-a13aff545ac8/_apis/Release/releases/26368",
+				"_links": {}
+			},
+			"retentionPolicy": {
+				"daysToKeep": 30,
+				"releasesToKeep": 3,
+				"retainBuild": true
+			},
+			"processParameters": {},
+			"properties": {
+				"LinkBoardsWorkItems": {
+					"$type": "System.String",
+					"$value": "False"
+				},
+				"BoardsEnvironmentType": {
+					"$type": "System.String",
+					"$value": "unmapped"
+				}
+			},
+			"preDeploymentGates": {
+				"id": 0,
+				"gatesOptions": null,
+				"gates": []
+			},
+			"postDeploymentGates": {
+				"id": 0,
+				"gatesOptions": null,
+				"gates": []
+			},
+			"environmentTriggers": [],
+			"badgeUrl": "https://wpadosapp.rgbk.com/Trust/_apis/public/Release/badge/cacc4a15-4e07-4de3-a0db-a13aff545ac8/314/579"
+		},
+		{
+			"id": 580,
+			"name": "Test02",
+			"rank": 3,
+			"owner": {
+				"displayName": "James R. Taylor",
+				"url": "https://wpadosapp.rgbk.com/Trust/_apis/Identities/74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+				"_links": {
+					"avatar": {
+						"href": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+					}
+				},
+				"id": "74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+				"uniqueName": "CORP\\A008744",
+				"imageUrl": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI",
+				"descriptor": "win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+			},
+			"variables": {
+				"EnableJobs": {
+					"value": "1"
+				},
+				"HashiSecretPath": {
+					"value": "ssis/qa/secrets"
+				},
+				"SsisServer": {
+					"value": "WTTRDBSQL02,22748"
+				}
+			},
+			"variableGroups": [],
+			"preDeployApprovals": {
+				"approvals": [
+					{
+						"rank": 1,
+						"isAutomated": true,
+						"isNotificationOn": false,
+						"id": 1815
+					}
+				],
+				"approvalOptions": {
+					"requiredApproverCount": null,
+					"releaseCreatorCanBeApprover": false,
+					"autoTriggeredAndPreviousEnvironmentApprovedCanBeSkipped": false,
+					"enforceIdentityRevalidation": false,
+					"timeoutInMinutes": 0,
+					"executionOrder": 1
+				}
+			},
+			"deployStep": {
+				"id": 1816
+			},
+			"postDeployApprovals": {
+				"approvals": [
+					{
+						"rank": 1,
+						"isAutomated": true,
+						"isNotificationOn": false,
+						"id": 1819
+					}
+				],
+				"approvalOptions": {
+					"requiredApproverCount": null,
+					"releaseCreatorCanBeApprover": false,
+					"autoTriggeredAndPreviousEnvironmentApprovedCanBeSkipped": false,
+					"enforceIdentityRevalidation": false,
+					"timeoutInMinutes": 0,
+					"executionOrder": 2
+				}
+			},
+			"deployPhases": [
+				{
+					"deploymentInput": {
+						"healthPercent": 0,
+						"deploymentHealthOption": "Custom",
+						"tags": [
+							"ALE-DEV"
+						],
+						"skipArtifactsDownload": false,
+						"artifactsDownloadInput": {
+							"downloadInputs": []
+						},
+						"queueId": 15,
+						"demands": [],
+						"enableAccessToken": false,
+						"timeoutInMinutes": 0,
+						"jobCancelTimeoutInMinutes": 1,
+						"condition": "succeeded()",
+						"overrideInputs": {}
+					},
+					"rank": 1,
+					"phaseType": 4,
+					"name": "Deployment group job",
+					"refName": null,
+					"workflowTasks": [
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Read Hashicorp Vault",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "filePath",
+								"filePath": "$(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/Hashicorp_Vaults.ps1",
+								"arguments": "-RoleID $(HashiRoleID) -SecretID $(HashiSecretID)",
+								"script": "# Write your PowerShell commands here.\n\nWrite-Host \"Hello World\"\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						},
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Replace Workday Credentials",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "inline",
+								"filePath": "",
+								"arguments": "",
+								"script": "((Get-Content -path $(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/$(EnvironmentVariableCsv) -Raw) -replace 'WorkdayPassword','$(Workday_ServerPassword)' -replace 'WorkdayUserName','$(Workday_ServerUserName)') | Set-Content -Path $(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/$(EnvironmentVariableCsv)\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						},
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Deploy SSIS",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "filePath",
+								"filePath": "$(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/deployscriptsensitive.ps1",
+								"arguments": "",
+								"script": "# Write your PowerShell commands here.\n\nWrite-Host \"Hello World\"\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						}
+					]
+				}
+			],
+			"environmentOptions": {
+				"emailNotificationType": "OnlyOnFailure",
+				"emailRecipients": "release.environment.owner;release.creator",
+				"skipArtifactsDownload": false,
+				"timeoutInMinutes": 0,
+				"enableAccessToken": false,
+				"publishDeploymentStatus": true,
+				"badgeEnabled": false,
+				"autoLinkWorkItems": false,
+				"pullRequestDeploymentEnabled": false
+			},
+			"demands": [],
+			"conditions": [],
+			"executionPolicy": {
+				"concurrencyCount": 1,
+				"queueDepthCount": 0
+			},
+			"schedules": [],
+			"currentRelease": {
+				"id": 26368,
+				"url": "https://wpadosapp.rgbk.com/Trust/cacc4a15-4e07-4de3-a0db-a13aff545ac8/_apis/Release/releases/26368",
+				"_links": {}
+			},
+			"retentionPolicy": {
+				"daysToKeep": 30,
+				"releasesToKeep": 3,
+				"retainBuild": true
+			},
+			"processParameters": {},
+			"properties": {
+				"LinkBoardsWorkItems": {
+					"$type": "System.String",
+					"$value": "False"
+				},
+				"BoardsEnvironmentType": {
+					"$type": "System.String",
+					"$value": "testing"
+				}
+			},
+			"preDeploymentGates": {
+				"id": 0,
+				"gatesOptions": null,
+				"gates": []
+			},
+			"postDeploymentGates": {
+				"id": 0,
+				"gatesOptions": null,
+				"gates": []
+			},
+			"environmentTriggers": [],
+			"badgeUrl": "https://wpadosapp.rgbk.com/Trust/_apis/public/Release/badge/cacc4a15-4e07-4de3-a0db-a13aff545ac8/314/580"
+		},
+		{
+			"id": 584,
+			"name": "Prod",
+			"rank": 4,
+			"owner": {
+				"displayName": "James R. Taylor",
+				"url": "https://wpadosapp.rgbk.com/Trust/_apis/Identities/74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+				"_links": {
+					"avatar": {
+						"href": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+					}
+				},
+				"id": "74922004-19ce-4f2a-a8c5-a39fb2d01bec",
+				"uniqueName": "CORP\\A008744",
+				"imageUrl": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI",
+				"descriptor": "win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0xMDQ3OTI"
+			},
+			"variables": {
+				"EnableJobs": {
+					"value": "1"
+				},
+				"HashiAppRole": {
+					"value": "ale_prod_approle"
+				},
+				"HashiRoleID": {
+					"value": null,
+					"isSecret": true
+				},
+				"HashiSecretID": {
+					"value": null,
+					"isSecret": true
+				},
+				"HashiSecretPath": {
+					"value": "ssis/prod/secrets"
+				},
+				"HashiUrlRoot": {
+					"value": "https://hv.rgbk.com:8200/"
+				},
+				"JobOwnerSvcAccount": {
+					"value": "CORP\\SVC_CD_ALE_P"
+				},
+				"SchedulesCsv": {
+					"value": "Schedules.csv"
+				},
+				"SsisServer": {
+					"value": "WPTRDBSQL02,13651"
+				},
+				"SsrsCJOJobName_NotSa": {
+					"value": "_Change_ALE_Jobs_to_SVC_CD_ALE_P"
+				},
+				"SsrsCJOStepName_NotSa": {
+					"value": "SVC_CD_ALE_P change"
+				}
+			},
+			"variableGroups": [],
+			"preDeployApprovals": {
+				"approvals": [
+					{
+						"rank": 1,
+						"isAutomated": false,
+						"isNotificationOn": false,
+						"approver": {
+							"displayName": "SCMD_Admins",
+							"url": "https://wpadosapp.rgbk.com/Trust/_apis/Identities/a2b43449-4bc6-4f42-b786-d6049b011f5e",
+							"_links": {
+								"avatar": {
+									"href": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0zMDQ2NTU"
+								}
+							},
+							"id": "a2b43449-4bc6-4f42-b786-d6049b011f5e",
+							"uniqueName": "CORP\\SCMD_Admins",
+							"imageUrl": "https://wpadosapp.rgbk.com/Trust/_apis/GraphProfile/MemberAvatars/win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0zMDQ2NTU",
+							"isContainer": true,
+							"descriptor": "win.Uy0xLTUtMjEtMzQzODE4Mzk4LTEwNzgwODE1MzMtMTgwMTY3NDUzMS0zMDQ2NTU"
+						},
+						"id": 1829
+					}
+				],
+				"approvalOptions": {
+					"requiredApproverCount": null,
+					"releaseCreatorCanBeApprover": true,
+					"autoTriggeredAndPreviousEnvironmentApprovedCanBeSkipped": false,
+					"enforceIdentityRevalidation": false,
+					"timeoutInMinutes": 0,
+					"executionOrder": 1
+				}
+			},
+			"deployStep": {
+				"id": 1830
+			},
+			"postDeployApprovals": {
+				"approvals": [
+					{
+						"rank": 1,
+						"isAutomated": true,
+						"isNotificationOn": false,
+						"id": 1831
+					}
+				],
+				"approvalOptions": {
+					"requiredApproverCount": null,
+					"releaseCreatorCanBeApprover": false,
+					"autoTriggeredAndPreviousEnvironmentApprovedCanBeSkipped": false,
+					"enforceIdentityRevalidation": false,
+					"timeoutInMinutes": 0,
+					"executionOrder": 2
+				}
+			},
+			"deployPhases": [
+				{
+					"deploymentInput": {
+						"healthPercent": 0,
+						"deploymentHealthOption": "Custom",
+						"tags": [
+							"ALE-PROD"
+						],
+						"skipArtifactsDownload": false,
+						"artifactsDownloadInput": {
+							"downloadInputs": []
+						},
+						"queueId": 16,
+						"demands": [],
+						"enableAccessToken": false,
+						"timeoutInMinutes": 0,
+						"jobCancelTimeoutInMinutes": 1,
+						"condition": "succeeded()",
+						"overrideInputs": {}
+					},
+					"rank": 1,
+					"phaseType": 4,
+					"name": "Deployment group job",
+					"refName": null,
+					"workflowTasks": [
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Read Hashicorp Vault",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "filePath",
+								"filePath": "$(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/Hashicorp_Vaults.ps1",
+								"arguments": "-RoleID $(HashiRoleID) -SecretID $(HashiSecretID)",
+								"script": "# Write your PowerShell commands here.\n\nWrite-Host \"Hello World\"\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						},
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Replace Workday Credentials",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "inline",
+								"filePath": "",
+								"arguments": "",
+								"script": "((Get-Content -path $(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/$(EnvironmentVariableCsv) -Raw) -replace 'WorkdayPassword','$(Workday_ServerPassword)' -replace 'WorkdayUserName','$(Workday_ServerUserName)') | Set-Content -Path $(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/$(EnvironmentVariableCsv)\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						},
+						{
+							"environment": {},
+							"taskId": "e213ff0f-5d5c-4791-802d-52ea3e7be1f1",
+							"version": "2.*",
+							"name": "Deploy SSIS",
+							"refName": "",
+							"enabled": true,
+							"alwaysRun": false,
+							"continueOnError": false,
+							"timeoutInMinutes": 0,
+							"definitionType": "task",
+							"overrideInputs": {},
+							"condition": "succeeded()",
+							"inputs": {
+								"targetType": "filePath",
+								"filePath": "$(System.DefaultWorkingDirectory)/_ALE-SSIS/ISPACs/helpers/deployscriptsensitive.ps1",
+								"arguments": "",
+								"script": "# Write your PowerShell commands here.\n\nWrite-Host \"Hello World\"\n",
+								"errorActionPreference": "stop",
+								"failOnStderr": "false",
+								"ignoreLASTEXITCODE": "false",
+								"pwsh": "false",
+								"workingDirectory": ""
+							}
+						}
+					]
+				}
+			],
+			"environmentOptions": {
+				"emailNotificationType": "OnlyOnFailure",
+				"emailRecipients": "release.environment.owner;release.creator",
+				"skipArtifactsDownload": false,
+				"timeoutInMinutes": 0,
+				"enableAccessToken": false,
+				"publishDeploymentStatus": true,
+				"badgeEnabled": false,
+				"autoLinkWorkItems": false,
+				"pullRequestDeploymentEnabled": false
+			},
+			"demands": [],
+			"conditions": [],
+			"executionPolicy": {
+				"concurrencyCount": 1,
+				"queueDepthCount": 0
+			},
+			"schedules": [],
+			"currentRelease": {
+				"id": 25917,
+				"url": "https://wpadosapp.rgbk.com/Trust/cacc4a15-4e07-4de3-a0db-a13aff545ac8/_apis/Release/releases/25917",
+				"_links": {}
+			},
+			"retentionPolicy": {
+				"daysToKeep": 30,
+				"releasesToKeep": 3,
+				"retainBuild": true
+			},
+			"processParameters": {},
+			"properties": {
+				"LinkBoardsWorkItems": {
+					"$type": "System.String",
+					"$value": "False"
+				},
+				"BoardsEnvironmentType": {
+					"$type": "System.String",
+					"$value": "testing"
+				}
+			},
+			"preDeploymentGates": {
+				"id": 0,
+				"gatesOptions": null,
+				"gates": []
+			},
+			"postDeploymentGates": {
+				"id": 0,
+				"gatesOptions": null,
+				"gates": []
+			},
+			"environmentTriggers": [],
+			"badgeUrl": "https://wpadosapp.rgbk.com/Trust/_apis/public/Release/badge/cacc4a15-4e07-4de3-a0db-a13aff545ac8/314/584"
+		}
+	],
+	"artifacts": [
+		{
+			"sourceId": "cacc4a15-4e07-4de3-a0db-a13aff545ac8:334",
+			"type": "Build",
+			"alias": "_ALE-SSIS",
+			"definitionReference": {
+				"artifactSourceDefinitionUrl": {
+					"id": "https://wpadosapp.rgbk.com/_permalink/_build/index?collectionId=d52215ea-402a-4e8d-b3e8-f097f9efc304&projectId=cacc4a15-4e07-4de3-a0db-a13aff545ac8&definitionId=334",
+					"name": ""
+				},
+				"defaultVersionBranch": {
+					"id": "",
+					"name": ""
+				},
+				"defaultVersionSpecific": {
+					"id": "",
+					"name": ""
+				},
+				"defaultVersionTags": {
+					"id": "",
+					"name": ""
+				},
+				"defaultVersionType": {
+					"id": "latestType",
+					"name": "Latest"
+				},
+				"definition": {
+					"id": "334",
+					"name": "ALE-SSIS"
+				},
+				"definitions": {
+					"id": "",
+					"name": ""
+				},
+				"IsMultiDefinitionType": {
+					"id": "False",
+					"name": "False"
+				},
+				"project": {
+					"id": "cacc4a15-4e07-4de3-a0db-a13aff545ac8",
+					"name": "Wealth Management Application Development"
+				},
+				"repository": {
+					"id": "",
+					"name": ""
+				}
+			},
+			"isPrimary": true,
+			"isRetained": false
+		},
+		{
+			"sourceId": "6772cfd1-40e5-4bdd-b819-b9cd364d866a:0a6ab121-107c-4f37-ad4c-bc78026812dd",
+			"type": "PackageManagement",
+			"alias": "ssis-automation",
+			"definitionReference": {
+				"defaultVersionSpecific": {
+					"id": "",
+					"name": ""
+				},
+				"defaultVersionType": {
+					"id": "latestType",
+					"name": "Latest"
+				},
+				"definition": {
+					"id": "0a6ab121-107c-4f37-ad4c-bc78026812dd",
+					"name": "ssis-automation"
+				},
+				"feed": {
+					"id": "6772cfd1-40e5-4bdd-b819-b9cd364d866a",
+					"name": "devops-current"
+				},
+				"files": {
+					"id": "**",
+					"name": "**"
+				},
+				"packageType": {
+					"id": "nuget",
+					"name": "NuGet"
+				},
+				"skipextract": {
+					"id": "",
+					"name": ""
+				},
+				"view": {
+					"id": "",
+					"name": ""
+				}
+			},
+			"isRetained": false
+		},
+		{
+			"sourceId": "a4d16b92-bd17-4f95-aa44-2c9c94256a13:a845c35f-f200-4099-96e8-c283e13cdc9d",
+			"type": "PackageManagement",
+			"alias": "ssis-automation-prerelease",
+			"definitionReference": {
+				"defaultVersionSpecific": {
+					"id": "",
+					"name": ""
+				},
+				"defaultVersionType": {
+					"id": "latestType",
+					"name": "Latest"
+				},
+				"definition": {
+					"id": "a845c35f-f200-4099-96e8-c283e13cdc9d",
+					"name": "ssis-automation"
+				},
+				"feed": {
+					"id": "a4d16b92-bd17-4f95-aa44-2c9c94256a13",
+					"name": "devops-prelease"
+				},
+				"files": {
+					"id": "**",
+					"name": "**"
+				},
+				"packageType": {
+					"id": "nuget",
+					"name": "NuGet"
+				},
+				"skipextract": {
+					"id": "",
+					"name": ""
+				},
+				"view": {
+					"id": "",
+					"name": ""
+				}
+			},
+			"isRetained": false
+		}
+	],
+	"triggers": [
+		{
+			"artifactAlias": "_ALE-SSIS",
+			"triggerConditions": [],
+			"triggerType": 1
+		}
+	],
+	"releaseNameFormat": "ALE-SSIS-$(Date:MM-dd-yyyy)-$(Build.BuildNumber)-$(Release.ReleaseId)",
+	"tags": [],
+	"properties": {
+		"DefinitionCreationSource": {
+			"$type": "System.String",
+			"$value": "ReleaseNew"
+		},
+		"System.EnvironmentRankLogicVersion": {
+			"$type": "System.String",
+			"$value": "2"
+		},
+		"IntegrateBoardsWorkItems": {
+			"$type": "System.String",
+			"$value": "False"
+		}
+	},
+	"id": 314,
+	"name": "ALE-SSIS",
+	"path": "\\ALE",
+	"projectReference": null,
+	"url": "https://wpadosapp.rgbk.com/Trust/cacc4a15-4e07-4de3-a0db-a13aff545ac8/_apis/Release/definitions/314",
+	"_links": {
+		"self": {
+			"href": "https://wpadosapp.rgbk.com/Trust/cacc4a15-4e07-4de3-a0db-a13aff545ac8/_apis/Release/definitions/314"
+		},
+		"web": {
+			"href": "https://wpadosapp.rgbk.com/Trust/cacc4a15-4e07-4de3-a0db-a13aff545ac8/_release?definitionId=314"
+		}
+	}
+}

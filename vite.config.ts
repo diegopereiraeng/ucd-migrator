@@ -7,7 +7,8 @@ export default defineConfig(({ mode }) => {
     return {
       server: {
         port: 3000,
-        host: '0.0.0.0',
+        host: 'localhost', // Use localhost instead of 0.0.0.0 for secure context (required for getUserMedia and other secure APIs)
+        // If you need to access from other devices on your network, use '0.0.0.0' but note that secure APIs won't work
       },
       plugins: [react()],
       define: {
