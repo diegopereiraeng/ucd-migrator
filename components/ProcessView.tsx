@@ -8,6 +8,7 @@ import {
   validateScripts,
   validateSchema,
   generateFromContext,
+  generateFromNamedContexts,
   DEFAULT_SUMMARY_SYSTEM_INSTRUCTION,
   DEFAULT_HARNESS_YAML_SYSTEM_INSTRUCTION,
   ENRICH_YAML_SYSTEM_INSTRUCTION,
@@ -15,6 +16,7 @@ import {
   VALIDATE_SCHEMA_SYSTEM_INSTRUCTION,
   DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION,
   stringifyParsedDataForPrompt,
+  extractYamlFromResponse,
   aiService
 } from '../services/aiService';
 import { SummaryView } from './SummaryView';
@@ -23,6 +25,10 @@ import { FileTreeView } from './FileTreeView';
 import { AiIcon, CodeIcon, ProcessIcon, DownloadIcon, SettingsIcon, PlusIcon, SequentialIcon, BranchIcon, TrashIcon } from './icons';
 import { getSystemInstructions, getParserDisplayName } from '../services/promptSelector';
 import { LLMProvider, LLM_PROVIDER_NAMES } from '../services/llmProvider';
+import {
+  formatHarnessValidationResult,
+  validateHarnessYamlShape,
+} from '../services/harnessYamlValidator';
 
 interface ProcessViewProps {
   parsedData: ParsedData;
@@ -436,30 +442,103 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
   const [enrichYamlSystemInstruction, setEnrichYamlSystemInstruction] = useState(systemInstructions.enrichPipeline);
   const [validateScriptsSystemInstruction, setValidateScriptsSystemInstruction] = useState(systemInstructions.validateScripts);
   const [validateSchemaSystemInstruction, setValidateSchemaSystemInstruction] = useState(systemInstructions.validateSchema);
+  const [splitPipelineSystemInstruction, setSplitPipelineSystemInstruction] = useState(systemInstructions.splitPipeline || '');
+  const [pipelineSkeletonSystemInstruction, setPipelineSkeletonSystemInstruction] = useState(systemInstructions.pipelineSkeleton || '');
+  const [ciStageGenerationSystemInstruction, setCiStageGenerationSystemInstruction] = useState(systemInstructions.ciStageGeneration || '');
+  const [cdStageGenerationSystemInstruction, setCdStageGenerationSystemInstruction] = useState(systemInstructions.cdStageGeneration || '');
+  const [validatePipelineSyntaxSystemInstruction, setValidatePipelineSyntaxSystemInstruction] = useState(systemInstructions.validatePipelineSyntax || '');
+  const [validateCiSyntaxSystemInstruction, setValidateCiSyntaxSystemInstruction] = useState(systemInstructions.validateCiSyntax || '');
+  const [validateCdSyntaxSystemInstruction, setValidateCdSyntaxSystemInstruction] = useState(systemInstructions.validateCdSyntax || '');
+  const [masterMergeSystemInstruction, setMasterMergeSystemInstruction] = useState(systemInstructions.masterMerge || '');
+  const [finalUnifiedValidateSystemInstruction, setFinalUnifiedValidateSystemInstruction] = useState(systemInstructions.finalUnifiedValidate || '');
 
   const [addStepModalState, setAddStepModalState] = useState<{
       isOpen: boolean;
       parentId: string | null;
   }>({ isOpen: false, parentId: null });
 
-  const promptTemplates = useMemo(() => [
-    { name: 'Custom Prompt', instruction: DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION },
-    { name: 'Generate Base Pipeline', instruction: harnessYamlSystemInstruction },
-    { name: 'Enrich Pipeline (Add Failure Steps)', instruction: enrichYamlSystemInstruction },
-    { name: 'Validate Scripts (Find Missing)', instruction: validateScriptsSystemInstruction },
-    { name: 'Validate/Fix Harness Schema', instruction: validateSchemaSystemInstruction },
-  ], [harnessYamlSystemInstruction, enrichYamlSystemInstruction, validateScriptsSystemInstruction, validateSchemaSystemInstruction]);
+  const promptTemplates = useMemo(() => {
+    const templates = [
+      { name: 'Custom Prompt', instruction: DEFAULT_CUSTOM_GEN_SYSTEM_INSTRUCTION },
+      { name: 'Generate Base Pipeline', instruction: harnessYamlSystemInstruction },
+      { name: 'Enrich Pipeline (Add Failure Steps)', instruction: enrichYamlSystemInstruction },
+      { name: 'Validate Scripts (Find Missing)', instruction: validateScriptsSystemInstruction },
+      { name: 'Validate/Fix Harness Schema', instruction: validateSchemaSystemInstruction },
+    ];
+
+    if (parserType === 'azureDevOps') {
+      templates.push(
+        { name: 'ADO Split Pipeline/CI/CD', instruction: splitPipelineSystemInstruction },
+        { name: 'ADO Pipeline Skeleton', instruction: pipelineSkeletonSystemInstruction },
+        { name: 'ADO CI Stage Generation', instruction: ciStageGenerationSystemInstruction },
+        { name: 'ADO CD Stage Generation', instruction: cdStageGenerationSystemInstruction },
+        { name: 'ADO Pipeline Syntax Validation', instruction: validatePipelineSyntaxSystemInstruction },
+        { name: 'ADO CI Syntax Validation', instruction: validateCiSyntaxSystemInstruction },
+        { name: 'ADO CD Syntax Validation', instruction: validateCdSyntaxSystemInstruction },
+        { name: 'ADO Master Merge', instruction: masterMergeSystemInstruction },
+        { name: 'ADO Final Unified Validation', instruction: finalUnifiedValidateSystemInstruction },
+      );
+    }
+
+    return templates;
+  }, [
+    parserType,
+    harnessYamlSystemInstruction,
+    enrichYamlSystemInstruction,
+    validateScriptsSystemInstruction,
+    validateSchemaSystemInstruction,
+    splitPipelineSystemInstruction,
+    pipelineSkeletonSystemInstruction,
+    ciStageGenerationSystemInstruction,
+    cdStageGenerationSystemInstruction,
+    validatePipelineSyntaxSystemInstruction,
+    validateCiSyntaxSystemInstruction,
+    validateCdSyntaxSystemInstruction,
+    masterMergeSystemInstruction,
+    finalUnifiedValidateSystemInstruction,
+  ]);
   
-  const getInitialWorkflow = (): WorkflowStep[] => [
-    { id: 'base', parentId: null, title: 'Step 1: Generate Base Pipeline', description: `Generates the initial pipeline based on the ${parserDisplayName} main success path.`, systemInstruction: harnessYamlSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: [] },
-    { id: 'enrich', parentId: 'base', title: 'Step 2: Add Missing Steps', description: `Analyzes the first pipeline and adds logic from the ${parserDisplayName} failure paths.`, systemInstruction: enrichYamlSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['base'] },
-    { id: 'validate-scripts', parentId: 'enrich', title: 'Step 3: Validate Scripts', description: `Cross-references the final YAML against the original ${parserDisplayName} data to ensure no scripts were missed.`, systemInstruction: validateScriptsSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['enrich'] },
-    { id: 'validate-schema', parentId: 'validate-scripts', title: 'Step 4: Validate Schema', description: 'Performs a structural validation of the YAML against the Harness schema.', systemInstruction: validateSchemaSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['validate-scripts'] }
-  ];
+  const getInitialWorkflow = (): WorkflowStep[] => {
+    if (parserType === 'azureDevOps') {
+      return [
+        { id: 'ado-split', parentId: null, title: 'Step 1: Split ADO Pipeline Artifacts', description: 'Extracts and normalizes pipeline-level, CI, and CD definitions for specialist conversion.', systemInstruction: splitPipelineSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: [] },
+        { id: 'ado-pipeline-skeleton', parentId: 'ado-split', title: 'Step 2A: Generate Pipeline Skeleton', description: 'Generates top-level Harness pipeline YAML without stages.', systemInstruction: pipelineSkeletonSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['ado-split'] },
+        { id: 'ado-ci-generate', parentId: 'ado-split', title: 'Step 2B: Generate CI Stages', description: 'Converts Azure CI definitions into Harness CI stages.', systemInstruction: ciStageGenerationSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['ado-split'] },
+        { id: 'ado-cd-generate', parentId: 'ado-split', title: 'Step 2C: Generate CD Stages', description: 'Converts Azure CD definitions into Harness Deployment/Custom stages.', systemInstruction: cdStageGenerationSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['ado-split'] },
+        { id: 'ado-pipeline-validate', parentId: 'ado-pipeline-skeleton', title: 'Step 3A: Validate Pipeline Skeleton', description: 'Validates and auto-fixes top-level pipeline YAML structure.', systemInstruction: validatePipelineSyntaxSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['ado-split', 'ado-pipeline-skeleton'] },
+        { id: 'ado-ci-validate', parentId: 'ado-ci-generate', title: 'Step 3B: Validate CI Stages', description: 'Validates and auto-fixes CI stage YAML fragments.', systemInstruction: validateCiSyntaxSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['ado-split', 'ado-ci-generate'] },
+        { id: 'ado-cd-validate', parentId: 'ado-cd-generate', title: 'Step 3C: Validate CD Stages', description: 'Validates and auto-fixes CD stage YAML fragments.', systemInstruction: validateCdSyntaxSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['ado-split', 'ado-cd-generate'] },
+        { id: 'ado-master-merge', parentId: 'ado-pipeline-validate', title: 'Step 4: Master Merge', description: 'Merges validated skeleton + CI + CD fragments into one unified pipeline.', systemInstruction: masterMergeSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['ado-split', 'ado-pipeline-validate', 'ado-ci-validate', 'ado-cd-validate'] },
+        { id: 'ado-final-validate', parentId: 'ado-master-merge', title: 'Step 5: Final Unified Validation', description: 'Runs final schema validation and safe auto-fixes for the complete merged pipeline.', systemInstruction: finalUnifiedValidateSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['ado-master-merge'] },
+      ];
+    }
+
+    return [
+      { id: 'base', parentId: null, title: 'Step 1: Generate Base Pipeline', description: `Generates the initial pipeline based on the ${parserDisplayName} main success path.`, systemInstruction: harnessYamlSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: [] },
+      { id: 'enrich', parentId: 'base', title: 'Step 2: Add Missing Steps', description: `Analyzes the first pipeline and adds logic from the ${parserDisplayName} failure paths.`, systemInstruction: enrichYamlSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['base'] },
+      { id: 'validate-scripts', parentId: 'enrich', title: 'Step 3: Validate Scripts', description: `Cross-references the final YAML against the original ${parserDisplayName} data to ensure no scripts were missed.`, systemInstruction: validateScriptsSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['enrich'] },
+      { id: 'validate-schema', parentId: 'validate-scripts', title: 'Step 4: Validate Schema', description: 'Performs a structural validation of the YAML against the Harness schema.', systemInstruction: validateSchemaSystemInstruction, status: 'initial', result: '', isCustom: false, contextSourceIds: ['validate-scripts'] }
+    ];
+  };
 
   useEffect(() => {
     setWorkflow(getInitialWorkflow());
-  }, [harnessYamlSystemInstruction, enrichYamlSystemInstruction, validateScriptsSystemInstruction, validateSchemaSystemInstruction]);
+  }, [
+    parserType,
+    harnessYamlSystemInstruction,
+    enrichYamlSystemInstruction,
+    validateScriptsSystemInstruction,
+    validateSchemaSystemInstruction,
+    splitPipelineSystemInstruction,
+    pipelineSkeletonSystemInstruction,
+    ciStageGenerationSystemInstruction,
+    cdStageGenerationSystemInstruction,
+    validatePipelineSyntaxSystemInstruction,
+    validateCiSyntaxSystemInstruction,
+    validateCdSyntaxSystemInstruction,
+    masterMergeSystemInstruction,
+    finalUnifiedValidateSystemInstruction,
+  ]);
 
   useEffect(() => {
     const getSummary = async () => {
@@ -546,6 +625,100 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
     });
   };
 
+  const parseJsonSafely = <T,>(value: string): T | null => {
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return null;
+    }
+  };
+
+  const getAzureSplitArtifacts = (): any => {
+    const allSteps: ParsedStep[] = [];
+    parsedData.processes.forEach((process) => {
+      allSteps.push(...process.mainFlow);
+    });
+    const summaryStep = allSteps.find(step => step.id === 'bundle_summary');
+
+    return summaryStep?.properties?.splitArtifacts || null;
+  };
+
+  const getAzureSourceSummary = (): Record<string, unknown> | null => {
+    const allSteps: ParsedStep[] = [];
+    parsedData.processes.forEach((process) => {
+      allSteps.push(...process.mainFlow);
+    });
+
+    const summaryStep = allSteps.find(step => step.id === 'bundle_summary');
+    const summaryProps = summaryStep?.properties;
+    if (!summaryProps) {
+      return null;
+    }
+
+    return {
+      totalFiles: summaryProps.totalFiles,
+      pipelineCount: summaryProps.pipelineCount,
+      templateCount: summaryProps.templateCount,
+      variableGroupCount: summaryProps.variableGroupCount,
+      fileList: summaryProps.fileList,
+      splitArtifacts: summaryProps.splitArtifacts,
+    };
+  };
+
+  const getNormalizedYaml = (rawContent: string): string => extractYamlFromResponse(rawContent);
+
+  const getAzureContextPayload = (split: any): Record<string, string> => {
+    const pipelineMeta = split?.pipeline_meta || {};
+    const ciDefinition = split?.ci_definition || {};
+    const cdDefinition = split?.cd_definition || {};
+
+    return {
+      pipeline_meta: JSON.stringify(pipelineMeta, null, 2),
+      ci_definition: JSON.stringify(ciDefinition, null, 2),
+      cd_definition: JSON.stringify(cdDefinition, null, 2),
+      pipeline_meta_classification_summary: JSON.stringify(pipelineMeta?.classification_summary || {}, null, 2),
+      pipeline_meta_resources_summary: JSON.stringify(pipelineMeta?.resources_summary || [], null, 2),
+      pipeline_meta_expression_evidence: JSON.stringify(pipelineMeta?.expression_evidence || [], null, 2),
+      pipeline_meta_output_variable_links: JSON.stringify(pipelineMeta?.output_variable_links || [], null, 2),
+      pipeline_meta_deployment_lifecycle_index: JSON.stringify(pipelineMeta?.deployment_lifecycle_index || [], null, 2),
+      ci_output_variable_links: JSON.stringify(ciDefinition?.output_variable_links || [], null, 2),
+      cd_output_variable_links: JSON.stringify(cdDefinition?.output_variable_links || [], null, 2),
+      cd_lifecycle_hooks: JSON.stringify(cdDefinition?.lifecycle_hooks || [], null, 2),
+    };
+  };
+
+  const getAzureNamedMetadataContexts = (split: any): Array<{ name: string; content: unknown }> => {
+    const pipelineMeta = split?.pipeline_meta || {};
+    const ciDefinition = split?.ci_definition || {};
+    const cdDefinition = split?.cd_definition || {};
+
+    return [
+      { name: 'pipeline_meta_classification_summary', content: pipelineMeta?.classification_summary || {} },
+      { name: 'pipeline_meta_resources_summary', content: pipelineMeta?.resources_summary || [] },
+      { name: 'pipeline_meta_expression_evidence', content: pipelineMeta?.expression_evidence || [] },
+      { name: 'pipeline_meta_output_variable_links', content: pipelineMeta?.output_variable_links || [] },
+      { name: 'pipeline_meta_deployment_lifecycle_index', content: pipelineMeta?.deployment_lifecycle_index || [] },
+      { name: 'ci_output_variable_links', content: ciDefinition?.output_variable_links || [] },
+      { name: 'cd_output_variable_links', content: cdDefinition?.output_variable_links || [] },
+      { name: 'cd_lifecycle_hooks', content: cdDefinition?.lifecycle_hooks || [] },
+    ];
+  };
+
+  const hasCiSplitContent = (split: any): boolean => {
+    const stageCount = split?.ci_definition?.stages?.length || 0;
+    const jobCount = split?.ci_definition?.jobs?.length || 0;
+    const templateCount = split?.ci_definition?.templates?.length || 0;
+    return stageCount > 0 || jobCount > 0 || templateCount > 0;
+  };
+
+  const hasCdSplitContent = (split: any): boolean => {
+    const stageCount = split?.cd_definition?.stages?.length || 0;
+    const jobCount = split?.cd_definition?.jobs?.length || 0;
+    const releaseCount = split?.cd_definition?.release_definitions?.length || 0;
+    const templateCount = split?.cd_definition?.templates?.length || 0;
+    return stageCount > 0 || jobCount > 0 || releaseCount > 0 || templateCount > 0;
+  };
+
 
   const handleGenerate = async (stepId: string) => {
     const step = workflow.find(s => s.id === stepId);
@@ -557,17 +730,188 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
       let result = '';
       const { systemInstruction, contextSourceIds } = step;
 
-      const contextSteps = contextSourceIds
-          .map(id => workflow.find(s => s.id === id))
-          .filter((s): s is WorkflowStep => !!s && s.status === 'completed');
+      const completedContextMap = new Map<string, WorkflowStep>();
+      contextSourceIds.forEach((id) => {
+        const stepCandidate = workflow.find(s => s.id === id);
+        if (stepCandidate?.status === 'completed') {
+          completedContextMap.set(id, stepCandidate);
+        }
+      });
 
-      if (contextSteps.length !== contextSourceIds.length) {
-          throw new Error("One or more context steps must be completed before running this step.");
+      let requiredContextIds = [...contextSourceIds];
+      if (step.id === 'ado-master-merge') {
+        const split = parseJsonSafely<any>(workflow.find(s => s.id === 'ado-split')?.result || '') || getAzureSplitArtifacts();
+        const hasCi = hasCiSplitContent(split);
+        const hasCd = hasCdSplitContent(split);
+        requiredContextIds = ['ado-split', 'ado-pipeline-validate'];
+        if (hasCi) {
+          requiredContextIds.push('ado-ci-validate');
+        }
+        if (hasCd) {
+          requiredContextIds.push('ado-cd-validate');
+        }
       }
+
+      const missingRequiredContexts = requiredContextIds.filter(id => !completedContextMap.has(id));
+      if (missingRequiredContexts.length > 0) {
+          throw new Error(`One or more required context steps must be completed before running this step. Missing: ${missingRequiredContexts.join(', ')}`);
+      }
+
+      const contextSteps = requiredContextIds
+          .map(id => completedContextMap.get(id))
+          .filter((s): s is WorkflowStep => !!s);
       
       const parentResult = contextSteps.length > 0 ? contextSteps[0].result : '';
 
       switch(step.id) {
+        case 'ado-split': {
+          const splitArtifacts = getAzureSplitArtifacts();
+          if (splitArtifacts) {
+            result = JSON.stringify(splitArtifacts, null, 2);
+            break;
+          }
+
+          result = await generateFromContext({
+            parsedData: stringifyParsedDataForPrompt(parsedData),
+          }, systemInstruction);
+          break;
+        }
+        case 'ado-pipeline-skeleton': {
+          const split = parseJsonSafely<any>(parentResult) || getAzureSplitArtifacts();
+          result = await generateFromContext({
+            ...getAzureContextPayload(split),
+            parsedData: stringifyParsedDataForPrompt(parsedData),
+          }, systemInstruction);
+          break;
+        }
+        case 'ado-ci-generate': {
+          const split = parseJsonSafely<any>(parentResult) || getAzureSplitArtifacts();
+          result = await generateFromContext({
+            ...getAzureContextPayload(split),
+            parsedData: stringifyParsedDataForPrompt(parsedData),
+          }, systemInstruction);
+          break;
+        }
+        case 'ado-cd-generate': {
+          const split = parseJsonSafely<any>(parentResult) || getAzureSplitArtifacts();
+          result = await generateFromContext({
+            ...getAzureContextPayload(split),
+            placeholder_serviceRef: '<+service.name>',
+            placeholder_serviceUseFromStage: 'Build',
+            placeholder_environmentRef: '<+env.name>',
+            placeholder_infraRef: '<+infra.name>',
+            placeholder_infraType: 'SshWinRmAzure',
+            placeholder_connectorRef: '<+input>',
+            placeholder_credentialsRef: '<+input>',
+            placeholder_hostConnectionType: 'Hostname',
+            placeholder_resourceGroup: '<+input>',
+            placeholder_subscriptionId: '<+input>',
+            parsedData: stringifyParsedDataForPrompt(parsedData),
+          }, systemInstruction);
+          break;
+        }
+        case 'ado-pipeline-validate': {
+          const split = parseJsonSafely<any>(contextSteps.find(s => s.id === 'ado-split')?.result || '') || getAzureSplitArtifacts();
+          const pipelineSkeletonYaml = getNormalizedYaml(contextSteps.find(s => s.id === 'ado-pipeline-skeleton')?.result || parentResult);
+          result = await generateFromContext({
+            ...getAzureContextPayload(split),
+            pipeline_skeleton_yaml: pipelineSkeletonYaml,
+          }, systemInstruction);
+          break;
+        }
+        case 'ado-ci-validate': {
+          const split = parseJsonSafely<any>(contextSteps.find(s => s.id === 'ado-split')?.result || '') || getAzureSplitArtifacts();
+          const ciFragmentYaml = getNormalizedYaml(contextSteps.find(s => s.id === 'ado-ci-generate')?.result || parentResult);
+          result = await generateFromContext({
+            ...getAzureContextPayload(split),
+            ci_fragment_yaml: ciFragmentYaml,
+          }, systemInstruction);
+          break;
+        }
+        case 'ado-cd-validate': {
+          const split = parseJsonSafely<any>(contextSteps.find(s => s.id === 'ado-split')?.result || '') || getAzureSplitArtifacts();
+          const cdFragmentYaml = getNormalizedYaml(contextSteps.find(s => s.id === 'ado-cd-generate')?.result || parentResult);
+          result = await generateFromContext({
+            ...getAzureContextPayload(split),
+            cd_fragment_yaml: cdFragmentYaml,
+            placeholder_serviceRef: '<+service.name>',
+            placeholder_serviceUseFromStage: 'Build',
+            placeholder_environmentRef: '<+env.name>',
+            placeholder_infraRef: '<+infra.name>',
+            placeholder_infraType: 'SshWinRmAzure',
+            placeholder_connectorRef: '<+input>',
+            placeholder_credentialsRef: '<+input>',
+            placeholder_hostConnectionType: 'Hostname',
+            placeholder_resourceGroup: '<+input>',
+            placeholder_subscriptionId: '<+input>',
+          }, systemInstruction);
+          break;
+        }
+        case 'ado-master-merge': {
+          const split = parseJsonSafely<any>(contextSteps.find(s => s.id === 'ado-split')?.result || '') || getAzureSplitArtifacts();
+          const adoSourceSummary = getAzureSourceSummary();
+          const pipelineGenerated = getNormalizedYaml(workflow.find(s => s.id === 'ado-pipeline-skeleton')?.result || '');
+          const ciGenerated = getNormalizedYaml(workflow.find(s => s.id === 'ado-ci-generate')?.result || '');
+          const cdGenerated = getNormalizedYaml(workflow.find(s => s.id === 'ado-cd-generate')?.result || '');
+          const pipelineValidated = getNormalizedYaml(contextSteps.find(s => s.id === 'ado-pipeline-validate')?.result || '');
+          const ciValidated = getNormalizedYaml(contextSteps.find(s => s.id === 'ado-ci-validate')?.result || '');
+          const cdValidated = getNormalizedYaml(contextSteps.find(s => s.id === 'ado-cd-validate')?.result || '');
+
+          result = await generateFromNamedContexts([
+            { name: 'ado_source_summary', content: adoSourceSummary || {} },
+            { name: 'pipeline_meta', content: split?.pipeline_meta || {} },
+            ...getAzureNamedMetadataContexts(split),
+            { name: 'pipeline_generated_yaml', content: pipelineGenerated },
+            { name: 'ci_generated_yaml', content: ciGenerated },
+            { name: 'cd_generated_yaml', content: cdGenerated },
+            { name: 'pipeline_validated_yaml', content: pipelineValidated },
+            { name: 'ci_validated_yaml', content: ciValidated },
+            { name: 'cd_validated_yaml', content: cdValidated },
+            { name: 'parsedData', content: stringifyParsedDataForPrompt(parsedData) },
+          ], systemInstruction);
+
+          const mergedYaml = getNormalizedYaml(result);
+          result = `\`\`\`yaml\n${mergedYaml}\n\`\`\``;
+          break;
+        }
+        case 'ado-final-validate':
+          {
+            const mergedYaml = getNormalizedYaml(parentResult);
+            const aiValidationResult = await validateSchema(mergedYaml, systemInstruction);
+            const correctedYamlCandidate = getNormalizedYaml(aiValidationResult);
+
+            const correctedValidation = validateHarnessYamlShape(correctedYamlCandidate);
+            const mergedValidation = validateHarnessYamlShape(mergedYaml);
+
+            let finalYaml = correctedYamlCandidate;
+            let finalValidation = correctedValidation;
+
+            if (!correctedValidation.valid && mergedValidation.valid) {
+              finalYaml = mergedYaml;
+              finalValidation = mergedValidation;
+            }
+
+            if (!finalValidation.valid) {
+              const localValidationFeedback = formatHarnessValidationResult(finalValidation);
+              const retrySystemInstruction = `${systemInstruction}\n\nAdditional deterministic local validation feedback (must be fully fixed):\n${localValidationFeedback}\n\nReturn corrected_pipeline_yaml with all listed local errors fixed.`;
+
+              const llmRetryValidationResult = await validateSchema(finalYaml, retrySystemInstruction);
+              const llmRetryYamlCandidate = getNormalizedYaml(llmRetryValidationResult);
+              const retryValidation = validateHarnessYamlShape(llmRetryYamlCandidate);
+
+              if (retryValidation.valid) {
+                finalYaml = llmRetryYamlCandidate;
+                finalValidation = retryValidation;
+              }
+            }
+
+            if (finalValidation.valid) {
+              result = `\`\`\`yaml\n${finalYaml}\n\`\`\``;
+            } else {
+              result = `\`\`\`yaml\n${finalYaml}\n\`\`\`\n\n${formatHarnessValidationResult(finalValidation)}`;
+            }
+          }
+          break;
         case 'base':
           result = await generateHarnessPipeline(parsedData, systemInstruction);
           break;
@@ -578,7 +922,14 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
           result = await validateScripts(parentResult, parsedData, systemInstruction);
           break;
         case 'validate-schema':
-          result = await validateSchema(parentResult, systemInstruction);
+          {
+            const inputYaml = getNormalizedYaml(parentResult);
+            const aiValidationResult = await validateSchema(inputYaml, systemInstruction);
+            const correctedYamlCandidate = getNormalizedYaml(aiValidationResult);
+            const localValidationTarget = correctedYamlCandidate?.includes('pipeline:') ? correctedYamlCandidate : inputYaml;
+            const localValidation = validateHarnessYamlShape(localValidationTarget);
+            result = `${aiValidationResult}\n\n${formatHarnessValidationResult(localValidation)}`;
+          }
           break;
         default: // Custom steps
           const context = contextSteps.reduce((acc, s) => {
@@ -621,8 +972,12 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
   };
 
   const handleExportYaml = () => {
-    const latestYamlStep = [...workflow].reverse().find(s => s.status === 'completed' && s.result.includes('pipeline:'));
-    const yamlToExport = latestYamlStep?.result || "No YAML generated yet.";
+    const latestYamlStep = [...workflow].reverse().find((s) => {
+      if (s.status !== 'completed') return false;
+      return s.result.includes('pipeline:');
+    });
+    const yamlRaw = latestYamlStep?.result || "No YAML generated yet.";
+    const yamlToExport = getNormalizedYaml(yamlRaw);
     downloadFile(yamlToExport, `${fileName.replace('.json', '')}-harness-pipeline.yml`, 'application/x-yaml');
   };
 
@@ -684,6 +1039,46 @@ export const ProcessView: React.FC<ProcessViewProps> = ({ parsedData, fileName, 
               <label htmlFor="validate-schema-prompt" className="block text-sm font-medium text-text-primary mb-1">Step 4: Validate Schema Prompt</label>
               <textarea id="validate-schema-prompt" rows={8} className="w-full p-2 bg-background-dark border border-border-color rounded-md text-xs" value={validateSchemaSystemInstruction} onChange={(e) => setValidateSchemaSystemInstruction(e.target.value)} />
             </div>
+            {parserType === 'azureDevOps' && (
+              <>
+                <div>
+                  <label htmlFor="ado-split-prompt" className="block text-sm font-medium text-text-primary mb-1">ADO Step 1: Split Prompt</label>
+                  <textarea id="ado-split-prompt" rows={6} className="w-full p-2 bg-background-dark border border-border-color rounded-md text-xs" value={splitPipelineSystemInstruction} onChange={(e) => setSplitPipelineSystemInstruction(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="ado-pipeline-skeleton-prompt" className="block text-sm font-medium text-text-primary mb-1">ADO Step 2A: Pipeline Skeleton Prompt</label>
+                  <textarea id="ado-pipeline-skeleton-prompt" rows={6} className="w-full p-2 bg-background-dark border border-border-color rounded-md text-xs" value={pipelineSkeletonSystemInstruction} onChange={(e) => setPipelineSkeletonSystemInstruction(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="ado-ci-gen-prompt" className="block text-sm font-medium text-text-primary mb-1">ADO Step 2B: CI Generation Prompt</label>
+                  <textarea id="ado-ci-gen-prompt" rows={6} className="w-full p-2 bg-background-dark border border-border-color rounded-md text-xs" value={ciStageGenerationSystemInstruction} onChange={(e) => setCiStageGenerationSystemInstruction(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="ado-cd-gen-prompt" className="block text-sm font-medium text-text-primary mb-1">ADO Step 2C: CD Generation Prompt</label>
+                  <textarea id="ado-cd-gen-prompt" rows={6} className="w-full p-2 bg-background-dark border border-border-color rounded-md text-xs" value={cdStageGenerationSystemInstruction} onChange={(e) => setCdStageGenerationSystemInstruction(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="ado-pipeline-validate-prompt" className="block text-sm font-medium text-text-primary mb-1">ADO Step 3A: Pipeline Syntax Validator</label>
+                  <textarea id="ado-pipeline-validate-prompt" rows={6} className="w-full p-2 bg-background-dark border border-border-color rounded-md text-xs" value={validatePipelineSyntaxSystemInstruction} onChange={(e) => setValidatePipelineSyntaxSystemInstruction(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="ado-ci-validate-prompt" className="block text-sm font-medium text-text-primary mb-1">ADO Step 3B: CI Syntax Validator</label>
+                  <textarea id="ado-ci-validate-prompt" rows={6} className="w-full p-2 bg-background-dark border border-border-color rounded-md text-xs" value={validateCiSyntaxSystemInstruction} onChange={(e) => setValidateCiSyntaxSystemInstruction(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="ado-cd-validate-prompt" className="block text-sm font-medium text-text-primary mb-1">ADO Step 3C: CD Syntax Validator</label>
+                  <textarea id="ado-cd-validate-prompt" rows={6} className="w-full p-2 bg-background-dark border border-border-color rounded-md text-xs" value={validateCdSyntaxSystemInstruction} onChange={(e) => setValidateCdSyntaxSystemInstruction(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="ado-master-merge-prompt" className="block text-sm font-medium text-text-primary mb-1">ADO Step 4: Master Merge Prompt</label>
+                  <textarea id="ado-master-merge-prompt" rows={6} className="w-full p-2 bg-background-dark border border-border-color rounded-md text-xs" value={masterMergeSystemInstruction} onChange={(e) => setMasterMergeSystemInstruction(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="ado-final-validate-prompt" className="block text-sm font-medium text-text-primary mb-1">ADO Step 5: Final Validator Prompt</label>
+                  <textarea id="ado-final-validate-prompt" rows={6} className="w-full p-2 bg-background-dark border border-border-color rounded-md text-xs" value={finalUnifiedValidateSystemInstruction} onChange={(e) => setFinalUnifiedValidateSystemInstruction(e.target.value)} />
+                </div>
+              </>
+            )}
           </div>
         )}
        </div>

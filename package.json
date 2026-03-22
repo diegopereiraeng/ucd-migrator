@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "./node_modules/.bin/tsc --noEmit",
+    "verify:ado-split": "./node_modules/.bin/tsc --noEmit && rm -rf .tmp/ado-verify && ./node_modules/.bin/tsc --outDir .tmp/ado-verify --module commonjs --moduleResolution node --target ES2022 --allowImportingTsExtensions false scripts/verify-ado-split.ts services/azureDevOpsParser.ts types.ts && mkdir -p .tmp/ado-verify && printf '{\"type\":\"commonjs\"}' > .tmp/ado-verify/package.json && node .tmp/ado-verify/scripts/verify-ado-split.js && rm -rf .tmp/ado-verify",
+    "verify:ado-v0": "./node_modules/.bin/tsc --noEmit && rm -rf .tmp/ado-v0-verify && ./node_modules/.bin/tsc --outDir .tmp/ado-v0-verify --module commonjs --moduleResolution node --target ES2022 --allowImportingTsExtensions false scripts/verify-ado-harness-v0.ts services/harnessYamlValidator.ts && mkdir -p .tmp/ado-v0-verify && printf '{\"type\":\"commonjs\"}' > .tmp/ado-v0-verify/package.json && node .tmp/ado-v0-verify/scripts/verify-ado-harness-v0.js && rm -rf .tmp/ado-v0-verify",
+    "verify:ado-v1": "npm run verify:ado-v0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",

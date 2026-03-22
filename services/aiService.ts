@@ -12,6 +12,29 @@ import { stringifyParsedDataForPrompt, cleanYamlResponse } from './geminiService
 // Export all system instructions from both UCD and Jenkins
 export * from './geminiService';
 
+export const extractYamlFromResponse = (rawText: string): string => {
+  const trimmed = rawText.trim();
+  const fencedYamlMatch = trimmed.match(/```(?:yaml|yml)?\n([\s\S]*?)\n```/i);
+  if (fencedYamlMatch?.[1]) {
+    return fencedYamlMatch[1].trim();
+  }
+
+  const pipelineIndex = trimmed.search(/(^|\n)\s*pipeline\s*:/i);
+  if (pipelineIndex >= 0) {
+    const normalizedStart = trimmed.slice(pipelineIndex).replace(/^\n/, '');
+    return normalizedStart.trim();
+  }
+
+  return trimmed;
+};
+
+export type ContextPayload = { [key: string]: unknown };
+
+export type NamedContext = {
+  name: string;
+  content: unknown;
+};
+
 class AIService {
   private currentProvider: LLMProvider = 'gemini';
   private services: Record<LLMProvider, ILLMService> = {
@@ -87,10 +110,7 @@ class AIService {
     });
   }
 
-  async generateFromContext(
-    context: { [key: string]: string },
-    systemInstruction: string
-  ): Promise<string> {
+  async generateFromContext(context: ContextPayload, systemInstruction: string): Promise<string> {
     let userPrompt = "Based on the following context data, please generate the required output according to the system instruction.\n\n";
     
     userPrompt += '### Context Data ###\n';
@@ -104,6 +124,18 @@ class AIService {
     });
     
     return cleanYamlResponse(result);
+  }
+
+  async generateFromNamedContexts(
+    contexts: NamedContext[],
+    systemInstruction: string
+  ): Promise<string> {
+    const contextPayload = contexts.reduce<ContextPayload>((acc, ctx) => {
+      acc[ctx.name] = ctx.content;
+      return acc;
+    }, {});
+
+    return this.generateFromContext(contextPayload, systemInstruction);
   }
 }
 
@@ -126,5 +158,8 @@ export const validateScripts = (yaml: string, parsedData: ParsedData, systemInst
 export const validateSchema = (yaml: string, systemInstruction: string) =>
   aiService.validateSchema(yaml, systemInstruction);
 
-export const generateFromContext = (context: { [key: string]: string }, systemInstruction: string) =>
+export const generateFromContext = (context: ContextPayload, systemInstruction: string) =>
   aiService.generateFromContext(context, systemInstruction);
+
+export const generateFromNamedContexts = (contexts: NamedContext[], systemInstruction: string) =>
+  aiService.generateFromNamedContexts(contexts, systemInstruction);
